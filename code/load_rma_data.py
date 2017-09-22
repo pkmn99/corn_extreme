@@ -109,48 +109,53 @@ def load_rma_loss_ratio(crop_name='all', level='county'):
 
 """
 Load loss ratio by damage cause
-df = load_rma_loss_ratio_cause(crop_name='cron')
+df = load_rma_loss_ratio_cause(crop_name='corn', rerun=False)
 """
-def load_rma_loss_ratio_cause(crop_name='corn'):
-    # load RMA loss and SOB data
-    data_loss = load_rma_loss_all(crop_name=crop_name)
-    data_sob = load_rma_sob_all(crop_name=crop_name)
+def load_rma_loss_ratio_cause(crop_name='corn',rerun=True):
+    if rerun:
+        # load RMA loss and SOB data
+        data_loss = load_rma_loss_all(crop_name=crop_name)
+        data_sob = load_rma_sob_all(crop_name=crop_name)
 
-    # Indemnity from RMA loss data (sum by FIPS, Year)
-    data_loss_cause = data_loss.groupby(['FIPS','Commodity Year','Damage Cause Description']).sum()['Indemnity Amount']
-    data_loss_cause_sum = data_loss.groupby(['FIPS','Commodity Year']).sum()['Indemnity Amount']
-    
-    # Indemnity from RMA SOB data (sum by FIPS, Year)
-    data_sob_sum = data_sob.groupby(['FIPS','Commodity Year']).sum()
-    data_loss_sum = data_loss.groupby(['FIPS','Commodity Year']).sum()
-    
-    # Get solution from https://stackoverflow.com/questions/20383972/binary-operation-broadcasting-across-multiindex
-    # Calculate percentage of indemnity amount by cause
-    data_loss_cause_percent = data_loss_cause.unstack('Damage Cause Description'). \
-        div(data_loss_cause_sum, axis=0).stack('Damage Cause Description'). \
-        reorder_levels(data_loss_cause.index.names)
-    
-    # Loss ratio from RMA SOB data 
-    loss_ratio = load_rma_loss_ratio(crop_name='corn', level='county')
-    # loss_ratio.rename(columns={'Year':'Commodity Year'}, inplace=True)
-    loss_ratio.set_index(['FIPS', 'Commodity Year'], inplace=True)
-    
-    # Loss ratio disaggregated into different causes
-    loss_ratio_cause = data_loss_cause_percent.unstack('Damage Cause Description'). \
-        mul(loss_ratio['Loss_ratio'], axis=0).stack('Damage Cause Description')
-    # Merge all these variables 
-    result = loss_ratio_cause.reset_index(). \
-        rename(columns={0:'Loss ratio by cause'}). \
-        merge(loss_ratio.reset_index().rename(columns={'Loss_ratio':'Loss ratio all cause'})).\
-        merge(data_loss_cause_percent.to_frame().reset_index(). \
-            rename(columns={0:'Cause percent'})). \
-        merge(data_loss_cause.reset_index(). \
-          rename(columns={'Indemnity Amount':'Indemnity Amount by cause'})). \
-        merge(data_sob_sum['Indemnity Amount'].to_frame().reset_index(). \
-          rename(columns={'Indemnity Amount':'Indemnity Amount sum SOB'})). \
-        merge(data_loss_cause_sum.to_frame().reset_index(). \
-          rename(columns={'Indemnity Amount':'Indemnity Amount sum loss'}))
-    return result.set_index(['FIPS', 'Commodity Year', 'Damage Cause Description'])
+        # Indemnity from RMA loss data (sum by FIPS, Year)
+        data_loss_cause = data_loss.groupby(['FIPS','Commodity Year','Damage Cause Description']).sum()['Indemnity Amount']
+        data_loss_cause_sum = data_loss.groupby(['FIPS','Commodity Year']).sum()['Indemnity Amount']
+        
+        # Indemnity from RMA SOB data (sum by FIPS, Year)
+        data_sob_sum = data_sob.groupby(['FIPS','Commodity Year']).sum()
+        data_loss_sum = data_loss.groupby(['FIPS','Commodity Year']).sum()
+        
+        # Get solution from https://stackoverflow.com/questions/20383972/binary-operation-broadcasting-across-multiindex
+        # Calculate percentage of indemnity amount by cause
+        data_loss_cause_percent = data_loss_cause.unstack('Damage Cause Description'). \
+            div(data_loss_cause_sum, axis=0).stack('Damage Cause Description'). \
+            reorder_levels(data_loss_cause.index.names)
+        
+        # Loss ratio from RMA SOB data 
+        loss_ratio = load_rma_loss_ratio(crop_name=crop_name, level='county')
+        # loss_ratio.rename(columns={'Year':'Commodity Year'}, inplace=True)
+        loss_ratio.set_index(['FIPS', 'Commodity Year'], inplace=True)
+        
+        # Loss ratio disaggregated into different causes
+        loss_ratio_cause = data_loss_cause_percent.unstack('Damage Cause Description'). \
+            mul(loss_ratio['Loss_ratio'], axis=0).stack('Damage Cause Description')
+        # Merge all these variables 
+        result = loss_ratio_cause.reset_index(). \
+            rename(columns={0:'Loss ratio by cause'}). \
+            merge(loss_ratio.reset_index().rename(columns={'Loss_ratio':'Loss ratio all cause'})).\
+            merge(data_loss_cause_percent.to_frame().reset_index(). \
+                rename(columns={0:'Cause percent'})). \
+            merge(data_loss_cause.reset_index(). \
+              rename(columns={'Indemnity Amount':'Indemnity Amount by cause'})). \
+            merge(data_sob_sum['Indemnity Amount'].to_frame().reset_index(). \
+              rename(columns={'Indemnity Amount':'Indemnity Amount sum SOB'})). \
+            merge(data_loss_cause_sum.to_frame().reset_index(). \
+              rename(columns={'Indemnity Amount':'Indemnity Amount sum loss'}))
+        loss_ratio_cause = result.set_index(['FIPS', 'Commodity Year', 'Damage Cause Description'])
+        loss_ratio_cause.to_csv('../data/result/RMA_loss_ratio_cause.csv')
+    else:
+        loss_ratio_cause = pd.read_csv('../data/result/RMA_loss_ratio_cause.csv')
+    return loss_ratio_cause
 
 
 """ 
@@ -199,12 +204,13 @@ def load_rma_loss_ratio_cause_month(rerun=False):
             reorder_levels(data_loss_cause.index.names)
         
         # Based on loss_ratio_cause to get one level deeper to month
-        loss_ratio_cause = load_rma_loss_ratio_cause()
+        loss_ratio_cause = load_rma_loss_ratio_cause(rerun=True)
 
         # Loss ratio disaggregated into different causes and different months
         loss_ratio_cause_month = data_loss_cause_percent.unstack('Month of Loss Abbreviation'). \
             mul(loss_ratio_cause['Loss ratio by cause'], axis=0).stack('Month of Loss Abbreviation')
-        loss_ratio_cause_month.to_csv('../data/result/RMA_loss_ratio_cause_month.csv')
+        loss_ratio_cause_month.to_frame('Loss ratio by cause and month').\
+            to_csv('../data/result/RMA_loss_ratio_cause_month.csv')
         print('Rerun function, file RMA_loss_ratio_cause_month.csv saved')
     else:    
         loss_ratio_cause_month = pd.read_csv('../data/result/RMA_loss_ratio_cause_month.csv')
