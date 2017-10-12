@@ -77,27 +77,30 @@ def fig_data():
     
     b_rain = pd.concat([b_wet, b_wet_nocold, b_wet_cold])
     b_rain['Event'] = 'Extreme rain'
-    
-    drought_rain_table = pd.DataFrame(np.zeros([6,4]), index=['Dry','Dry+hot','Dry-hot','Rain','Rain+cold',
-                                      'Rain-cold'],columns=['mean','ci_low','ci_high','ci'])
-    # Weighted mean
-    drought_rain_table.iloc[0,0] = np.average(b_dry['Yield_ana_to_yield'],weights=b_dry['Area'])
-    drought_rain_table.iloc[1,0] = np.average(b_dry_hot['Yield_ana_to_yield'],weights=b_dry_hot['Area'])
-    drought_rain_table.iloc[2,0] = np.average(b_dry_nohot['Yield_ana_to_yield'],weights=b_dry_nohot['Area'])
-    drought_rain_table.iloc[3,0] = np.average(b_wet['Yield_ana_to_yield'],weights=b_wet['Area'])
-    drought_rain_table.iloc[4,0] = np.average(b_wet_cold['Yield_ana_to_yield'],weights=b_wet_cold['Area'])
-    drought_rain_table.iloc[5,0] = np.average(b_wet_nocold['Yield_ana_to_yield'],weights=b_wet_nocold['Area'])
-    
-    # bootstramp CI
-    drought_rain_table.iloc[0,1:3] = bootstrap.ci(data=b_dry['Yield_ana_to_yield,weight'], statfunction=weighted_mean, n_samples=1000,method='pi') 
-    drought_rain_table.iloc[1,1:3] = bootstrap.ci(data=b_dry_hot['Yield_ana_to_yield,weight'], statfunction=weighted_mean, n_samples=1000,method='pi') 
-    drought_rain_table.iloc[2,1:3] = bootstrap.ci(data=b_dry_nohot['Yield_ana_to_yield,weight'], statfunction=weighted_mean, n_samples=1000,method='pi') 
-    drought_rain_table.iloc[3,1:3] = bootstrap.ci(data=b_wet['Yield_ana_to_yield,weight'], statfunction=weighted_mean, n_samples=1000,method='pi') 
-    drought_rain_table.iloc[4,1:3] = bootstrap.ci(data=b_wet_cold['Yield_ana_to_yield,weight'], statfunction=weighted_mean, n_samples=1000,method='pi') 
-    drought_rain_table.iloc[5,1:3] = bootstrap.ci(data=b_wet_nocold['Yield_ana_to_yield,weight'], statfunction=weighted_mean, n_samples=1000,method='pi') 
-    
-    # Ci value 
-    drought_rain_table['ci'] = drought_rain_table['mean'] -  drought_rain_table['ci_low']    
+    b_drought_rain = pd.concat([b_drought[['Event','Type','Yield_ana_to_yield','Area']], 
+                                b_rain[['Event','Type', 'Yield_ana_to_yield','Area']]])
+    b_drought_rain['Yield_ana_to_yield,weight'] = zip(b_drought_rain['Yield_ana_to_yield'], b_drought_rain['Area'])
+ 
+#    drought_rain_table = pd.DataFrame(np.zeros([6,4]), index=['Dry','Dry+hot','Dry-hot','Rain','Rain+cold',
+#                                      'Rain-cold'],columns=['mean','ci_low','ci_high','ci'])
+#    # Weighted mean
+#    drought_rain_table.iloc[0,0] = np.average(b_dry['Yield_ana_to_yield'],weights=b_dry['Area'])
+#    drought_rain_table.iloc[1,0] = np.average(b_dry_hot['Yield_ana_to_yield'],weights=b_dry_hot['Area'])
+#    drought_rain_table.iloc[2,0] = np.average(b_dry_nohot['Yield_ana_to_yield'],weights=b_dry_nohot['Area'])
+#    drought_rain_table.iloc[3,0] = np.average(b_wet['Yield_ana_to_yield'],weights=b_wet['Area'])
+#    drought_rain_table.iloc[4,0] = np.average(b_wet_cold['Yield_ana_to_yield'],weights=b_wet_cold['Area'])
+#    drought_rain_table.iloc[5,0] = np.average(b_wet_nocold['Yield_ana_to_yield'],weights=b_wet_nocold['Area'])
+#    
+#    # bootstramp CI
+#    drought_rain_table.iloc[0,1:3] = bootstrap.ci(data=b_dry['Yield_ana_to_yield,weight'], statfunction=weighted_mean, n_samples=1000,method='pi') 
+#    drought_rain_table.iloc[1,1:3] = bootstrap.ci(data=b_dry_hot['Yield_ana_to_yield,weight'], statfunction=weighted_mean, n_samples=1000,method='pi') 
+#    drought_rain_table.iloc[2,1:3] = bootstrap.ci(data=b_dry_nohot['Yield_ana_to_yield,weight'], statfunction=weighted_mean, n_samples=1000,method='pi') 
+#    drought_rain_table.iloc[3,1:3] = bootstrap.ci(data=b_wet['Yield_ana_to_yield,weight'], statfunction=weighted_mean, n_samples=1000,method='pi') 
+#    drought_rain_table.iloc[4,1:3] = bootstrap.ci(data=b_wet_cold['Yield_ana_to_yield,weight'], statfunction=weighted_mean, n_samples=1000,method='pi') 
+#    drought_rain_table.iloc[5,1:3] = bootstrap.ci(data=b_wet_nocold['Yield_ana_to_yield,weight'], statfunction=weighted_mean, n_samples=1000,method='pi') 
+#    
+#    # Ci value 
+#    drought_rain_table['ci'] = drought_rain_table['mean'] -  drought_rain_table['ci_low']    
 
     # Panel 4 data preparation: loss ratio by month
     from load_rma_data import load_rma_loss_ratio_cause_month
@@ -122,12 +125,49 @@ def fig_data():
     
     loss_temp['loss_ratio,weight'] = zip(loss_temp['Loss ratio by cause and month'], loss_temp['Area'])
 
-    return bin_yield, loss_ratio_Prec, drought_rain_table, loss_temp
+    return bin_yield, loss_ratio_Prec, b_drought_rain, loss_temp
+
+def plot_panel_c(b_drought_rain, axes):
+
+    f1 = sns.barplot(x='Type', y='Yield_ana_to_yield,weight',
+                     data=b_drought_rain, estimator=weighted_mean,
+                     order=['Dry','Dry+Hot','Dry-Hot','Rain','Rain+cold','Rain-cold'],
+                     ci=95, orient='v', ax=axes)
+    
+   # order=['dry','dry_hot','dry_nohot','wet','wet_cold','wet_nocold'],
+
+    # Move bar
+    for i, patch in enumerate(axes.patches):
+            if i >= 3:
+                patch.set_x(patch.get_x() + 0.5)
+    
+    # Change bar color
+    for i, patch in enumerate(axes.patches):
+            if i >= 3:
+                patch.set_facecolor(colors[-1])
+            else:    
+                patch.set_facecolor(colors[0])
+                
+    # Move error bar
+    for i, line in enumerate(axes.lines):
+            if i >= 3:
+                line.set_xdata(line.get_xdata() + 0.5)            
+    
+    # Rearrange xtick and label            
+    x_txt = ['Dry(all)', 'Dry+hot', 'Dry-hot', 'Rain(all)','Rain+cold','Rain-cold']
+    xtick = np.arange(0,6.0)
+    xtick[3::] = xtick[3::] + 0.5
+    
+    f1.set(xticks=xtick, xticklabels=x_txt, xlim=(-0.6,6+0.1))            
+    f1.set_ylabel('Yield change (%)')
+    f1.set_xlabel('Interaction with temperature')
+    
+    axes.legend((axes.patches[0], axes.patches[3]), ('Drought', 'Extreme rainfall'), loc='upper left')
+
 
 def make_plot():
-    colors = define_colors()
     fig, axes = plt.subplots(2,2, figsize=(12,8))
-    bin_yield, loss_ratio_Prec, drought_rain_table, loss_temp = fig_data()
+    bin_yield, loss_ratio_Prec, b_drought_rain, loss_temp = fig_data()
     
     x_txt = [str(i) for i in np.arange(-2.5,3.6,0.5)]
     x_txt.insert(0,'')
@@ -136,12 +176,12 @@ def make_plot():
     ##################################### Panel A
 
     sns.barplot(x='Prec_sigma_bin', y='Yield_ana_to_yield', data=bin_yield, 
-                palette=colors, ci=95, orient='v',saturation=1, 
+                palette=colors, ci=95, orient='v', saturation=1, 
                 ax=axes[0,0])
     sns.despine()
     axes[0,0].set(xticks=np.arange(-0.5,14.5,1), xticklabels=(x_txt))
     
-    axes[0,0].set_ylabel('Yield change')
+    axes[0,0].set_ylabel('Yield change (%)')
     axes[0,0].set_xlabel('Precipitation deviation (SD)',labelpad=15)
     axes[0,0].text(0.0, -0.15, 'Extremely dry', transform=axes[0,0].transAxes, fontsize=10,
                    color=colors[0])
@@ -170,47 +210,59 @@ def make_plot():
     loss_ratio_Prec.plot.bar(width=0.75, stacked=True, ax=axes[0,1], color=['#e22c3d','#89160F','#3873DF','#8A62AE'])
     axes[0,1].set_xticks(np.arange(-0.5,14.5,1))
     axes[0,1].set_xlim(-0.5,13.5)
-    axes[0,1].set_xticklabels(x_txt,rotation=0)
-    axes[0,1].set_xlabel('Precipitation deviation (SD)')
+    axes[0,1].set_xticklabels(x_txt, rotation=0)
+    axes[0,1].set_xlabel('Precipitation deviation (SD)', labelpad=15)
     axes[0,1].set_ylabel('Loss ratio')
     
     # Change xlabel color
     [t.set_color(colors[0]) for i,t in enumerate(axes[0,1].xaxis.get_ticklabels()) if i<3]
     [t.set_color(colors[-1]) for i,t in enumerate(axes[0,1].xaxis.get_ticklabels()) if i>=11]
+
+    # Add tick color
+    axes[0,1].text(0.0, -0.15, 'Extremely dry', transform=axes[0,1].transAxes, fontsize=10,
+                   color=colors[0])
+    axes[0,1].text(0.25, -0.15, 'Normal dry', transform=axes[0,1].transAxes, fontsize=10,
+                   color=colors[2])
+    axes[0,1].text(0.5, -0.15, 'Normal wet', transform=axes[0,1].transAxes, fontsize=10,
+                   color=colors[6])
+    axes[0,1].text(0.75, -0.15, 'Extremely wet', transform=axes[0,1].transAxes, fontsize=10,
+                   color=colors[-1])
     
     ################################### Panel C
-    N = 6
-    hspace = 1.25
-    left = 0.1
-    
-    ind = np.arange(3)/2.0 + left # the x locations for the groups
-    width = 0.45       # the width of the bars
-    
-    # Alternative Red: "#e74c3c" and blue "#3498db"
-    
-    #with sns.axes_style("whitegrid"):
-    rects1 = axes[1,0].bar(ind, drought_rain_table['mean'][0:3], width, color=colors[0], 
-                           yerr=drought_rain_table['ci'][0:3], error_kw={'ecolor':'k','lw':2})
-    rects2 = axes[1,0].bar(ind + width + hspace,drought_rain_table['mean'][3:6], width, color=colors[-1], 
-                           yerr=drought_rain_table['ci'][3:6], error_kw={'ecolor':'k','lw':3, 'capsize':0})
-    
-    # add some text for labels, title and axes ticks
-    axes[1,0].set_ylabel('Yield change')
-    axes[1,0].set_title('Temperature interaction with drought and extreme rainfall')
-    # ax.set_xticks(ind + width / 2)
-    axes[1,0].set_xticks(np.concatenate((ind + width / 2, ind + width*1.5 + hspace)))
-    axes[1,0].set_xticklabels(('Dry(all)', 'Dry+hot', 'Dry-hot', 'Rain(all)','Rain+cold','Rain-cold'), 
-                              fontsize=11)
-    # rotation=45, ha='right'
-    axes[1,0].set_xlim([ind[0]-left, ind[-1] + 2* width + hspace + 0.1])
-    
-    axes[1,0].legend((rects1[0], rects2[0]), ('Drought', 'Extreme rainfall'), loc='upper left')
+    plot_panel_c(b_drought_rain, axes[1,0])
 
-    for i, line in enumerate(axes[1,0].lines):
-        line.set_solid_capstyle('round')
-        line.set_solid_joinstyle('round')
-        line.set_dash_capstyle('round')
-        line.set_dash_joinstyle('round')
+   # N = 6
+   # hspace = 1.25
+   # left = 0.1
+   # 
+   # ind = np.arange(3)/2.0 + left # the x locations for the groups
+   # width = 0.45       # the width of the bars
+   # 
+   # # Alternative Red: "#e74c3c" and blue "#3498db"
+   # 
+   # #with sns.axes_style("whitegrid"):
+   # rects1 = axes[1,0].bar(ind, drought_rain_table['mean'][0:3], width, color=colors[0], 
+   #                        yerr=drought_rain_table['ci'][0:3], error_kw={'ecolor':'k','lw':2})
+   # rects2 = axes[1,0].bar(ind + width + hspace,drought_rain_table['mean'][3:6], width, color=colors[-1], 
+   #                        yerr=drought_rain_table['ci'][3:6], error_kw={'ecolor':'k','lw':3, 'capsize':0})
+   # 
+   # # add some text for labels, title and axes ticks
+   # axes[1,0].set_ylabel('Yield change')
+   # axes[1,0].set_title('Temperature interaction with drought and extreme rainfall')
+   # # ax.set_xticks(ind + width / 2)
+   # axes[1,0].set_xticks(np.concatenate((ind + width / 2, ind + width*1.5 + hspace)))
+   # axes[1,0].set_xticklabels(('Dry(all)', 'Dry+hot', 'Dry-hot', 'Rain(all)','Rain+cold','Rain-cold'), 
+   #                           fontsize=11)
+   # # rotation=45, ha='right'
+   # axes[1,0].set_xlim([ind[0]-left, ind[-1] + 2* width + hspace + 0.1])
+   # 
+   # axes[1,0].legend((rects1[0], rects2[0]), ('Drought', 'Extreme rainfall'), loc='upper left')
+
+   # for i, line in enumerate(axes[1,0].lines):
+   #     line.set_solid_capstyle('round')
+   #     line.set_solid_joinstyle('round')
+   #     line.set_dash_capstyle('round')
+   #     line.set_dash_joinstyle('round')
     
     ################################# Panel D
     
@@ -218,7 +270,6 @@ def make_plot():
                      data=loss_temp, estimator=weighted_mean, order=['MAY','JUN','JUL','AUG'],
                      palette=[colors[-1],colors[0]], saturation=1, ci=95, orient='v', ax=axes[1,1])
     
-    axes[1,1].set_title('Month') 
     axes[1,1].set_ylabel('Loss ratio')
     axes[1,1].set_xticklabels(['May','June','July','August'])
     f2.set_xlabel('Month of loss') 
@@ -231,8 +282,9 @@ def make_plot():
     
     plt.subplots_adjust(top=0.95, bottom=0.08, hspace=0.3)
     
-    plt.savefig('../figure/fig1_test3.pdf')
+    plt.savefig('../figure/fig1_test4.pdf')
 
 if __name__ == "__main__":
+    colors = define_colors()
     sns.set_style("ticks")
     make_plot()
