@@ -13,8 +13,8 @@ def weighted_mean(x, **kws):
 def define_colors():
     # Define color
     color1 = sns.diverging_palette(10, 257, l=50, s=85, n=2)
-    color2 = sns.diverging_palette(10, 257, l=70, s=85, n=9)[3]
-    color3 = sns.diverging_palette(10, 257, l=70, s=85, n=9)[5]
+    color2 = sns.diverging_palette(10, 257, l=70, s=85, n=9)[2]
+    color3 = sns.diverging_palette(10, 257, l=70, s=85, n=9)[6]
     colors = [color1[0]]*2 + [color2]*4 + [color3]*5 +[color1[-1]]*3
     return colors
 
@@ -45,7 +45,6 @@ def fig_data():
     loss_ratio_Prec.columns=['Drought', 'Heat', 'Excess Rain','Cold Weather']
     
     # Panel C: temperature interaction
-
     c3 = bin_yield['Prec_sigma_bin']<4 # all drought
     c4 = (bin_yield['Tmax_sigma_bin']>12)&(bin_yield['Prec_sigma_bin']<4) # hot and dry
     c5 = (bin_yield['Tmax_sigma_bin']<=12)&(bin_yield['Prec_sigma_bin']<4) # dry but not hot
@@ -159,8 +158,8 @@ def plot_panel_c(b_drought_rain, axes):
     xtick[3::] = xtick[3::] + 0.5
     
     f1.set(xticks=xtick, xticklabels=x_txt, xlim=(-0.6,6+0.1))            
-    f1.set_ylabel('Yield change (%)')
-    f1.set_xlabel('Interaction with temperature')
+    f1.set_ylabel('Yield change (%)', fontsize=12)
+    f1.set_xlabel('Interactions with temperature', fontsize=12)
     
     axes.legend((axes.patches[0], axes.patches[3]), ('Drought', 'Extreme rainfall'), loc='upper left')
 
@@ -175,14 +174,18 @@ def make_plot():
     
     ##################################### Panel A
 
-    sns.barplot(x='Prec_sigma_bin', y='Yield_ana_to_yield', data=bin_yield, 
-                palette=colors, ci=95, orient='v', saturation=1, 
+   # sns.barplot(x='Prec_sigma_bin', y='Yield_ana_to_yield', data=bin_yield, 
+   #             palette=colors, ci=95, orient='v', saturation=1, 
+   #             ax=axes[0,0])
+    sns.barplot(x='Prec_sigma_bin', y='Yield_ana_to_yield,weight', estimator=weighted_mean, 
+                data=bin_yield, palette=colors, ci=95, orient='v', saturation=1, 
                 ax=axes[0,0])
+
     sns.despine()
     axes[0,0].set(xticks=np.arange(-0.5,14.5,1), xticklabels=(x_txt))
     
-    axes[0,0].set_ylabel('Yield change (%)')
-    axes[0,0].set_xlabel('Precipitation deviation (SD)',labelpad=15)
+    axes[0,0].set_ylabel('Yield change (%)', fontsize=12)
+    axes[0,0].set_xlabel('Precipitation deviation ($\sigma$)',labelpad=15, fontsize=12)
     axes[0,0].text(0.0, -0.15, 'Extremely dry', transform=axes[0,0].transAxes, fontsize=10,
                    color=colors[0])
     axes[0,0].text(0.25, -0.15, 'Normal dry', transform=axes[0,0].transAxes, fontsize=10,
@@ -191,6 +194,9 @@ def make_plot():
                    color=colors[6])
     axes[0,0].text(0.75, -0.15, 'Extremely wet', transform=axes[0,0].transAxes, fontsize=10,
                    color=colors[-1])
+
+    axes[0,0].text(-0.15, 1, 'a', fontsize=16, transform=axes[0,0].transAxes, fontweight='bold')
+
     
     # axes[0,0].xaxis.set_ticks_position('bottom')
     
@@ -211,8 +217,8 @@ def make_plot():
     axes[0,1].set_xticks(np.arange(-0.5,14.5,1))
     axes[0,1].set_xlim(-0.5,13.5)
     axes[0,1].set_xticklabels(x_txt, rotation=0)
-    axes[0,1].set_xlabel('Precipitation deviation (SD)', labelpad=15)
-    axes[0,1].set_ylabel('Loss ratio')
+    axes[0,1].set_xlabel('Precipitation deviation ($\sigma$)', labelpad=15, fontsize=12)
+    axes[0,1].set_ylabel('Loss ratio', fontsize=12)
     
     # Change xlabel color
     [t.set_color(colors[0]) for i,t in enumerate(axes[0,1].xaxis.get_ticklabels()) if i<3]
@@ -227,9 +233,12 @@ def make_plot():
                    color=colors[6])
     axes[0,1].text(0.75, -0.15, 'Extremely wet', transform=axes[0,1].transAxes, fontsize=10,
                    color=colors[-1])
+
+    axes[0,1].text(-0.15, 1, 'b', fontsize=16, transform=axes[0,1].transAxes, fontweight='bold')
     
     ################################### Panel C
     plot_panel_c(b_drought_rain, axes[1,0])
+    axes[1,0].text(-0.15, 1, 'c', fontsize=16, transform=axes[1,0].transAxes, fontweight='bold')
 
    # N = 6
    # hspace = 1.25
@@ -270,18 +279,21 @@ def make_plot():
                      data=loss_temp, estimator=weighted_mean, order=['MAY','JUN','JUL','AUG'],
                      palette=[colors[-1],colors[0]], saturation=1, ci=95, orient='v', ax=axes[1,1])
     
-    axes[1,1].set_ylabel('Loss ratio')
+    axes[1,1].set_ylabel('Loss ratio', fontsize=12)
     axes[1,1].set_xticklabels(['May','June','July','August'])
-    f2.set_xlabel('Month of loss') 
+    f2.set_xlabel('Month of loss', fontsize=12) 
 
     # change legend
     f2.legend_.set_title('Cause of loss')
     new_labels = ['Excess rain', 'Drought']
     for t, l in zip(f2.legend_.texts, new_labels): t.set_text(l)
 
+    axes[1,1].text(-0.15, 1, 'd', fontsize=16, transform=axes[1,1].transAxes, fontweight='bold')
+
     
     plt.subplots_adjust(top=0.95, bottom=0.08, hspace=0.3)
     
+   # plt.savefig('../figure/fig1_test4.png')
     plt.savefig('../figure/fig1_test4.pdf')
 
 if __name__ == "__main__":
