@@ -117,3 +117,18 @@ def heavy_rain(percent=False,month_start=5, month_end=8):
 
     return df_heavy_rain, df_hrain_time
 
+
+# Load growing season climate, May to Aug
+def load_gs_climate(var='ppt'):
+    dr = pd.date_range('1981','2016',freq='A')
+    df = load_prism_county_year_range(var, 1981, 2016, freq='1M')
+    
+    temp = (df.iloc[range(4,420,12),:].values + df.iloc[range(5,420,12),:].values +
+            df.iloc[range(6,420,12),:].values + df.iloc[range(7,420,12),:].values)
+    
+    if var != 'ppt':
+        temp = temp/4
+            
+    df_gs = pd.DataFrame(temp, index=dr, columns=df.columns)
+    
+    return df_gs
