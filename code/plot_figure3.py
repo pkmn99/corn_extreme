@@ -59,12 +59,12 @@ def plot_scatter_sns(df, x_txt, y_txt, mycolor, ax, show_dot=False):
     
     with sns.axes_style("ticks"):
 #     sns.set_style("ticks")
-        sns.regplot(x=x_txt, y=y_txt, data=df, ax=ax, ci=None, color=mycolor, 
+        sns.regplot(x=x_txt, y=y_txt, data=df, ax=ax, ci=95, color=mycolor, 
                     scatter_kws=scatter_kws)
         sns.despine()    
 
     y_p, p = my_fitting(df, x_txt, y_txt, predict=False)
-    r = df.corr()['Yield_ana_to_yield_weighted'][x_txt]
+    r = df.corr()[y_txt][x_txt]
     
     # if p < 0.05, add * 
     if p < 0.05:
@@ -75,7 +75,10 @@ def plot_scatter_sns(df, x_txt, y_txt, mycolor, ax, show_dot=False):
     ax.text(0.7, 0.9, r_txt, transform=ax.transAxes)
     ax.set_ylabel('')
     ax.set_xlabel('')
-    ax.set_ylim(-50,30)
+    if level !='FIPS':
+        ax.set_ylim(-50,30)
+    else:
+        ax.set_ylim(-100,100)
     ax.axes.tick_params(axis='both',labelsize=10)
 
 
@@ -123,20 +126,20 @@ def figure_data(level='State'):
     
     rain_state_w = (column_weighted(bin_yield[c1], level, 'Yield_ana_to_yield','Area')).\
                     merge(column_weighted(bin_yield, level, var_list, 'Area')).\
-                    merge(bin_yield.groupby(level).sum()['Area'].reset_index())
+                    merge(bin_yield.groupby(level).mean()['Area'].reset_index())
     
     c2 = bin_yield['Prec_sigma_bin']<4
     
     drought_state_w = (column_weighted(bin_yield[c2], level, 'Yield_ana_to_yield','Area')).\
                         merge(column_weighted(bin_yield, level, var_list, 'Area')).\
-                        merge(bin_yield.groupby(level).sum()['Area'].reset_index())
+                        merge(bin_yield.groupby(level).mean()['Area'].reset_index())
             
     rain_state_w['Yield_ana_to_yield_weighted'] = rain_state_w['Yield_ana_to_yield_weighted']*100     
     drought_state_w['Yield_ana_to_yield_weighted'] = drought_state_w['Yield_ana_to_yield_weighted']*100     
     
-    if level!='FIPS':
-        rain_state_w['Area'] = rain_state_w['Area']/1000000     
-        drought_state_w['Area'] = drought_state_w['Area']/1000000     
+   # if level!='FIPS':
+    rain_state_w['Area'] = rain_state_w['Area']/1000     
+    drought_state_w['Area'] = drought_state_w['Area']/1000     
 
     return rain_state_w, drought_state_w
 
@@ -166,18 +169,19 @@ def make_plot():
         axes.flatten()[i],show_dot=show_dot)
     
     # Control limit        
-    axes.flatten()[0].set_xlim(0, 700) # Prec
-    axes.flatten()[4].set_xlim(0, 700)
-    
-    axes.flatten()[2].set_xlim(-50, 500) # Area
-    axes.flatten()[6].set_xlim(-50, 500)
+    if level != 'FIPS':
+        axes.flatten()[0].set_xlim(0, 700) # Prec
+        axes.flatten()[4].set_xlim(0, 700)
+        
+        axes.flatten()[2].set_xlim(-10, 140) # Area
+        axes.flatten()[6].set_xlim(-10, 140)
     
     axes.flatten()[0].set_ylabel('Yield change (%)', fontsize=12)
     axes.flatten()[4].set_ylabel('Yield change (%)', fontsize=12)
     
     
     # Add xlabel
-    xlabel_txt = [u'Precipitation (mm)', 'Maximum temperature (${^\circ}$C)', 'Corn area (million ha)', 
+    xlabel_txt = [u'Precipitation (mm)', 'Maximum temperature (${^\circ}$C)', 'Harvest area (10$^3$acres)', 
                   'Soil available water content (m$^3$/m$^3$)']
     for i in range(len(x_txt)):
         axes.flatten()[i].set_xlabel(xlabel_txt[i], fontsize=12)
@@ -198,12 +202,13 @@ def make_plot():
     
     plt.savefig('../figure/figure3_%s.pdf'%level)
 
-    print('figure file saved')
+    print('figure file %s level saved'%level)
 
 
 if __name__ == "__main__":
     colors = define_colors()
-    level = 'State'
+    level = 'FIPS'
+   # level = 'State'
     rain_state_w, drought_state_w = figure_data(level=level)
     make_plot()
 
