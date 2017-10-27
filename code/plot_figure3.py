@@ -75,11 +75,12 @@ def plot_scatter_sns(df, x_txt, y_txt, mycolor, ax, show_dot=False):
     ax.text(0.7, 0.9, r_txt, transform=ax.transAxes)
     ax.set_ylabel('')
     ax.set_xlabel('')
-    if level !='FIPS':
-        ax.set_ylim(-50,30)
-    else:
-        ax.set_ylim(-100,100)
+#    if level !='FIPS':
+#        ax.set_ylim(-50,30)
+#    else:
+#        ax.set_ylim(-100,100)
     ax.axes.tick_params(axis='both',labelsize=10)
+    ax.plot(ax.get_xlim(), [0,0], color='k', lw=0.5, linestyle='--', zorder=0)
 
 
 """
@@ -175,10 +176,16 @@ def make_plot():
         
         axes.flatten()[2].set_xlim(-10, 140) # Area
         axes.flatten()[6].set_xlim(-10, 140)
+
+        [ax.set_ylim(-50,30) for ax in axes.flatten()]
+#        [axes.flatten()[i].set_ylim(-50,30) for i in range(len(x_txt))]
+    else:
+#        [axes.flatten()[i].set_ylim(-100,100) for i in range(len(x_txt))]
+        [ax.set_ylim(-100,100) for ax in axes.flatten()]
     
     axes.flatten()[0].set_ylabel('Yield change (%)', fontsize=12)
     axes.flatten()[4].set_ylabel('Yield change (%)', fontsize=12)
-    
+     
     
     # Add xlabel
     xlabel_txt = [u'Precipitation (mm)', 'Maximum temperature (${^\circ}$C)', 'Harvest area (10$^3$acres)', 
