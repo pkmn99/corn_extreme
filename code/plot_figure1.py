@@ -276,8 +276,9 @@ def make_plot():
     ################################# Panel D
     
     f2 = sns.barplot(x='Month of Loss Abbreviation', y='loss_ratio,weight', hue='Damage Cause Description', 
-                     data=loss_temp, estimator=weighted_mean, order=['MAY','JUN','JUL','AUG'],
-                     palette=[colors[-1],colors[0]], saturation=1, ci=95, orient='v', ax=axes[1,1])
+                     data=loss_temp, estimator=weighted_mean, order=['MAY','JUN','JUL','AUG'], 
+                     hue_order=['Drought', 'Excess Moisture/Precip/Rain'],
+                     palette=[colors[0],colors[-1]], saturation=1, ci=95, orient='v', ax=axes[1,1])
     
     axes[1,1].set_ylabel('Loss ratio', fontsize=12)
     axes[1,1].set_xticklabels(['May','June','July','August'])
@@ -285,7 +286,7 @@ def make_plot():
 
     # change legend
     f2.legend_.set_title('Cause of loss')
-    new_labels = ['Excess rain', 'Drought']
+    new_labels = ['Drought', 'Excess rain']
     for t, l in zip(f2.legend_.texts, new_labels): t.set_text(l)
 
     axes[1,1].text(-0.15, 1, 'd', fontsize=16, transform=axes[1,1].transAxes, fontweight='bold')
@@ -294,7 +295,7 @@ def make_plot():
     plt.subplots_adjust(top=0.95, bottom=0.08, hspace=0.3)
     
    # plt.savefig('../figure/fig1_test4.png')
-    plt.savefig('../figure/fig1_test4.pdf')
+    plt.savefig('../figure/figure1.pdf')
 
 if __name__ == "__main__":
     colors = define_colors()
