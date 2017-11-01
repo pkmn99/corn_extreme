@@ -197,3 +197,32 @@ def add_yield_anomaly(corn_combined, rerun=False):
 
     return combined_sample, trend_para
 
+# Get the corn progress for each month
+def get_corn_progress():    
+    # Load progress (state) and corn area (county)
+    corn_progress= load_nass_county_data('corn', 'progress', 'allstates', 1986, 2016)
+
+    corn_area = load_nass_county_data('corn', 'grain_areaharvested', 'allstates', 1981, 2016)
+    corn_area.rename(columns={'Value':'Area'}, inplace=True)
+
+    # Covert time string to pd.Period 
+    toweek = lambda x: pd.Period(x, freq='W')
+    corn_progress['Time'] = corn_progress['Week Ending'].map(toweek)
+
+    # Add month for each week
+    corn_progress['Month'] = corn_progress['Time'].map(lambda x: x.month)
+
+    # Merge with area
+    corn_progress = corn_progress.merge(corn_area.groupby(['State','Year']).sum()['Area'].reset_index(),
+                                        on=['State','Year'])
+
+    # Weighed by Area
+    corn_progress['Value_area'] = corn_progress['Value'] * corn_progress['Area']
+
+    c = corn_progress['Year'] >1980
+    result = corn_progress[c].groupby(['Month','Data Item']).sum()['Value_area'] / \
+             corn_progress[c].groupby(['Month']).sum()['Value_area']
+        
+    result_area = corn_progress[c].groupby('Month').sum()['Value_area']
+    
+    return result
