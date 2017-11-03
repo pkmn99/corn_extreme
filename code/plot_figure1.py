@@ -282,22 +282,48 @@ def make_plot():
     
     axes[1,1].set_ylabel('Loss ratio', fontsize=12)
     axes[1,1].set_xticklabels(['May','June','July','August'])
+#    axex.text(1,-0.25, Planted(50%) )
     f2.set_xlabel('Month of loss', fontsize=12) 
 
     # change legend
+    f2.legend([f2.patches[0], f2.patches[-1]], ['Drought', 'Excess rain'], loc=6,
+              fontsize=10)
     f2.legend_.set_title('Cause of loss')
-    new_labels = ['Drought', 'Excess rain']
-    for t, l in zip(f2.legend_.texts, new_labels): t.set_text(l)
+    f2.legend_.get_title().set(fontsize=10)
+
+    y = 1.9
+    axes[1,1].text(0,y, 'Stage: Planted(71%)',ha='center', fontsize=8)
+    axes[1,1].text(1,y, 'Emerged(56%)',ha='center', fontsize=8)
+    axes[1,1].text(2,y, 'Sillking(85%)',ha='center', fontsize=8)
+    axes[1,1].text(3,y, 'Dough(46%)',ha='center', fontsize=8)
+    
+    y = 1.8
+    axes[1,1].text(0,y, 'Rain: 105mm',ha='center', color=colors[-1],fontsize=8)
+    axes[1,1].text(1,y, '110mm',ha='center',color=colors[-1],fontsize=8)
+    axes[1,1].text(2,y, '98mm',ha='center',color=colors[-1],fontsize=8)
+    axes[1,1].text(3,y, '91mm',ha='center',color=colors[-1],fontsize=8)
+    
+    y = 1.7
+    axes[1,1].text(0,y, 'Max Temp: 22.4${^\circ}$C',ha='center', color=colors[0],fontsize=8)
+    axes[1,1].text(1,y, '27.5${^\circ}$C',ha='center',color=colors[0],fontsize=8)
+    axes[1,1].text(2,y, '29.6${^\circ}$C',ha='center',color=colors[0],fontsize=8)
+    axes[1,1].text(3,y, '28.7${^\circ}$C',ha='center',color=colors[0],fontsize=8)
+
+#    new_labels = ['Drought', 'Excess rain']
+#    for t, l in zip(f2.legend_.texts, new_labels): t.set_text(l)
 
     axes[1,1].text(-0.15, 1, 'd', fontsize=16, transform=axes[1,1].transAxes, fontweight='bold')
+#    axes[1,1].set_xlim(-0.5,13.5)
 
     
     plt.subplots_adjust(top=0.95, bottom=0.08, hspace=0.3)
     
    # plt.savefig('../figure/fig1_test4.png')
-    plt.savefig('../figure/figure1.pdf')
+    plt.savefig('../figure/figure1_test.pdf')
 
 if __name__ == "__main__":
     colors = define_colors()
+    sns.set_context("notebook")
     sns.set_style("ticks")
+
     make_plot()
