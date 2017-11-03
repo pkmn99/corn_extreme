@@ -153,7 +153,8 @@ def plot_panel_c(b_drought_rain, axes):
                 line.set_xdata(line.get_xdata() + 0.5)            
     
     # Rearrange xtick and label            
-    x_txt = ['Dry(all)', 'Dry+hot', 'Dry-hot', 'Rain(all)','Rain+cold','Rain-cold']
+   # x_txt = ['Dry(all)', 'Dry+hot', 'Dry-hot', 'Rain(all)','Rain+cold','Rain-cold']
+    x_txt = ['Dry(all)', 'Dry+heat', 'Dry-heat', 'Wet(all)','Wet+cold','Wet-cold']
     xtick = np.arange(0,6.0)
     xtick[3::] = xtick[3::] + 0.5
     
@@ -162,7 +163,7 @@ def plot_panel_c(b_drought_rain, axes):
     f1.set_xlabel('Interactions with temperature', fontsize=12)
     f1.set_ylim(-50,30)
     
-    axes.legend((axes.patches[0], axes.patches[3]), ('Drought', 'Extreme rainfall'), loc='upper left')
+    axes.legend((axes.patches[0], axes.patches[3]), ('Extreme dry', 'Extreme wet'), loc='upper left')
 
     # county sample number for each event type
     n_count = b_drought_rain.groupby('Type').count()['Event']
@@ -195,25 +196,25 @@ def make_plot():
     
     ##################################### Panel A
 
-    sns.barplot(x='Prec_sigma_bin', y='Yield_ana_to_yield', data=bin_yield, 
-                palette=colors, ci=95, orient='v', saturation=1, 
-                ax=axes[0,0])
-   # sns.barplot(x='Prec_sigma_bin', y='Yield_ana_to_yield,weight', estimator=weighted_mean, 
-   #             data=bin_yield, palette=colors, ci=95, orient='v', saturation=1, 
+   # sns.barplot(x='Prec_sigma_bin', y='Yield_ana_to_yield', data=bin_yield, 
+   #             palette=colors, ci=95, orient='v', saturation=1, 
    #             ax=axes[0,0])
+    sns.barplot(x='Prec_sigma_bin', y='Yield_ana_to_yield,weight', estimator=weighted_mean, 
+                data=bin_yield, palette=colors, ci=95, orient='v', saturation=1, 
+                ax=axes[0,0])
 
     sns.despine()
     axes[0,0].set(xticks=np.arange(-0.5,14.5,1), xticklabels=(x_txt))
     
     axes[0,0].set_ylabel('Yield change (%)', fontsize=12)
-    axes[0,0].set_xlabel('Precipitation deviation ($\sigma$)',labelpad=15, fontsize=12)
-    axes[0,0].text(0.0, -0.15, 'Extremely dry', transform=axes[0,0].transAxes, fontsize=10,
+    axes[0,0].set_xlabel('Precipitation anomaly ($\sigma$)',labelpad=15, fontsize=12)
+    axes[0,0].text(0.0, -0.15, 'Extreme dry', transform=axes[0,0].transAxes, fontsize=10,
                    color=colors[0])
-    axes[0,0].text(0.25, -0.15, 'Normal dry', transform=axes[0,0].transAxes, fontsize=10,
+    axes[0,0].text(0.25, -0.15, 'Moderate dry', transform=axes[0,0].transAxes, fontsize=10,
                    color=colors[2])
-    axes[0,0].text(0.5, -0.15, 'Normal wet', transform=axes[0,0].transAxes, fontsize=10,
+    axes[0,0].text(0.5, -0.15, 'Moderate wet', transform=axes[0,0].transAxes, fontsize=10,
                    color=colors[6])
-    axes[0,0].text(0.75, -0.15, 'Extremely wet', transform=axes[0,0].transAxes, fontsize=10,
+    axes[0,0].text(0.75, -0.15, 'Extreme wet', transform=axes[0,0].transAxes, fontsize=10,
                    color=colors[-1])
 
     axes[0,0].text(-0.15, 1, 'a', fontsize=16, transform=axes[0,0].transAxes, fontweight='bold')
@@ -252,7 +253,7 @@ def make_plot():
     axes[0,1].set_xticks(np.arange(-0.5,14.5,1))
     axes[0,1].set_xlim(-0.5,13.5)
     axes[0,1].set_xticklabels(x_txt, rotation=0)
-    axes[0,1].set_xlabel('Precipitation deviation ($\sigma$)', labelpad=15, fontsize=12)
+    axes[0,1].set_xlabel('Precipitation anomaly ($\sigma$)', labelpad=15, fontsize=12)
     axes[0,1].set_ylabel('Loss ratio', fontsize=12)
     
     # Change xlabel color
@@ -262,9 +263,9 @@ def make_plot():
     # Add tick color
     axes[0,1].text(0.0, -0.15, 'Extremely dry', transform=axes[0,1].transAxes, fontsize=10,
                    color=colors[0])
-    axes[0,1].text(0.25, -0.15, 'Normal dry', transform=axes[0,1].transAxes, fontsize=10,
+    axes[0,1].text(0.25, -0.15, 'Moderate dry', transform=axes[0,1].transAxes, fontsize=10,
                    color=colors[2])
-    axes[0,1].text(0.5, -0.15, 'Normal wet', transform=axes[0,1].transAxes, fontsize=10,
+    axes[0,1].text(0.5, -0.15, 'Moderate wet', transform=axes[0,1].transAxes, fontsize=10,
                    color=colors[6])
     axes[0,1].text(0.75, -0.15, 'Extremely wet', transform=axes[0,1].transAxes, fontsize=10,
                    color=colors[-1])
