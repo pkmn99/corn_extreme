@@ -160,8 +160,29 @@ def plot_panel_c(b_drought_rain, axes):
     f1.set(xticks=xtick, xticklabels=x_txt, xlim=(-0.6,6+0.1))            
     f1.set_ylabel('Yield change (%)', fontsize=12)
     f1.set_xlabel('Interactions with temperature', fontsize=12)
+    f1.set_ylim(-50,30)
     
     axes.legend((axes.patches[0], axes.patches[3]), ('Drought', 'Extreme rainfall'), loc='upper left')
+
+    # county sample number for each event type
+    n_count = b_drought_rain.groupby('Type').count()['Event']
+    
+
+    axes.text(0.0, -47, "n:100%", fontsize=10,
+                   color='k',ha='center')
+    axes.text(1, -47, "{0:.0f}%".format(1.0*n_count['Dry+Hot']/n_count['Dry']*100), 
+              fontsize=10, color='k',ha='center')
+    axes.text(2, -47, "{0:.0f}%".format(1.0*n_count['Dry-Hot']/n_count['Dry']*100),
+              fontsize=10, color='k',ha='center')
+    
+    axes.text(3.5, -47, "{0:.0f}%".format(100), fontsize=10,
+                   color='k',ha='center')
+    
+    axes.text(4.5, -47, "{0:.0f}%".format(1.0*n_count['Rain+cold']/n_count['Rain']*100),
+              fontsize=10, color='k',ha='center')
+    
+    axes.text(5.5, -47, "{0:.0f}%".format(1.0*n_count['Rain-cold']/n_count['Rain']*100),
+              fontsize=10, color='k',ha='center')
 
 
 def make_plot():
@@ -174,12 +195,12 @@ def make_plot():
     
     ##################################### Panel A
 
-   # sns.barplot(x='Prec_sigma_bin', y='Yield_ana_to_yield', data=bin_yield, 
-   #             palette=colors, ci=95, orient='v', saturation=1, 
-   #             ax=axes[0,0])
-    sns.barplot(x='Prec_sigma_bin', y='Yield_ana_to_yield,weight', estimator=weighted_mean, 
-                data=bin_yield, palette=colors, ci=95, orient='v', saturation=1, 
+    sns.barplot(x='Prec_sigma_bin', y='Yield_ana_to_yield', data=bin_yield, 
+                palette=colors, ci=95, orient='v', saturation=1, 
                 ax=axes[0,0])
+   # sns.barplot(x='Prec_sigma_bin', y='Yield_ana_to_yield,weight', estimator=weighted_mean, 
+   #             data=bin_yield, palette=colors, ci=95, orient='v', saturation=1, 
+   #             ax=axes[0,0])
 
     sns.despine()
     axes[0,0].set(xticks=np.arange(-0.5,14.5,1), xticklabels=(x_txt))
@@ -196,6 +217,20 @@ def make_plot():
                    color=colors[-1])
 
     axes[0,0].text(-0.15, 1, 'a', fontsize=16, transform=axes[0,0].transAxes, fontweight='bold')
+     
+    # Calculte exteme drought and rainfall impact to show on bar chart
+    c5 = b_drought_rain['Type'] == 'Dry'
+    v_drought = (b_drought_rain[c5]['Yield_ana_to_yield'] * b_drought_rain[c5]['Area']).sum()/b_drought_rain[c5]['Area'].sum()
+    
+    c6 = b_drought_rain['Type'] == 'Rain'
+    v_rain = (b_drought_rain[c6]['Yield_ana_to_yield'] * b_drought_rain[c6]['Area']).sum()/b_drought_rain[c6]['Area'].sum()
+
+
+    axes[0,0].text(0.02, 0.9, "{0:.1f}%".format(v_drought), transform=axes[0,0].transAxes,
+                   fontsize=10, color=colors[0])
+
+    axes[0,0].text(0.85, 0.9,"{0:.1f}%".format(v_rain), transform=axes[0,0].transAxes,
+                   fontsize=10, color=colors[-1])
 
     
     # axes[0,0].xaxis.set_ticks_position('bottom')
@@ -291,19 +326,19 @@ def make_plot():
     f2.legend_.set_title('Cause of loss')
     f2.legend_.get_title().set(fontsize=10)
 
-    y = 1.9
+    y = 1.9 + 0.05
     axes[1,1].text(0,y, 'Stage: Planted(71%)',ha='center', fontsize=8)
     axes[1,1].text(1,y, 'Emerged(56%)',ha='center', fontsize=8)
     axes[1,1].text(2,y, 'Sillking(85%)',ha='center', fontsize=8)
     axes[1,1].text(3,y, 'Dough(46%)',ha='center', fontsize=8)
     
-    y = 1.8
+    y = 1.8 + 0.05
     axes[1,1].text(0,y, 'Rain: 105mm',ha='center', color=colors[-1],fontsize=8)
     axes[1,1].text(1,y, '110mm',ha='center',color=colors[-1],fontsize=8)
     axes[1,1].text(2,y, '98mm',ha='center',color=colors[-1],fontsize=8)
     axes[1,1].text(3,y, '91mm',ha='center',color=colors[-1],fontsize=8)
     
-    y = 1.7
+    y = 1.7 + 0.05
     axes[1,1].text(0,y, 'Max Temp: 22.4${^\circ}$C',ha='center', color=colors[0],fontsize=8)
     axes[1,1].text(1,y, '27.5${^\circ}$C',ha='center',color=colors[0],fontsize=8)
     axes[1,1].text(2,y, '29.6${^\circ}$C',ha='center',color=colors[0],fontsize=8)
@@ -319,7 +354,7 @@ def make_plot():
     plt.subplots_adjust(top=0.95, bottom=0.08, hspace=0.3)
     
    # plt.savefig('../figure/fig1_test4.png')
-    plt.savefig('../figure/figure1_test.pdf')
+    plt.savefig('../figure/figure1.pdf')
 
 if __name__ == "__main__":
     colors = define_colors()
