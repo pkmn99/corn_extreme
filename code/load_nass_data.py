@@ -200,7 +200,7 @@ def add_yield_anomaly(corn_combined, rerun=False):
 # Get the corn progress for each month
 def get_corn_progress():    
     # Load progress (state) and corn area (county)
-    corn_progress= load_nass_county_data('corn', 'progress', 'allstates', 1986, 2016)
+    corn_progress= load_nass_county_data('corn', 'progress', 'allstates', 1981, 2016)
 
     corn_area = load_nass_county_data('corn', 'grain_areaharvested', 'allstates', 1981, 2016)
     corn_area.rename(columns={'Value':'Area'}, inplace=True)
@@ -226,3 +226,20 @@ def get_corn_progress():
     result_area = corn_progress[c].groupby('Month').sum()['Value_area']
     
     return result
+
+
+"""
+Get historical irrigation area percentage
+"""
+def irrigation_percent(level='State'):
+    # Load area
+    corn_area = load_nass_county_data('corn', 'grain_areaharvested', 'allstates', 1981, 2016)
+    corn_area.rename(columns={'Value':'Area'}, inplace=True)
+    corn_area.dropna(inplace=True)
+
+    corn_irr_area = load_nass_county_data('corn', 'grain_irrigated_areaharvested', 'allstates', 1981, 2016)
+    corn_irr_area.rename(columns={'Value':'Irr_Area'}, inplace=True)
+    corn_irr_area.dropna(inplace=True)
+    area_combined = corn_area.merge(corn_irr_area[['FIPS','Year','Irr_Area']], on=['FIPS','Year'])
+    
+    return area_combined.groupby('State').sum()['Irr_Area']/area_combined.groupby(level).sum()['Area']
