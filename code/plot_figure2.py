@@ -65,17 +65,34 @@ def plot_bar(bin_yield, ax, state='Illinois', xtick=True):
     x_txt.append('')
     
     c = bin_yield['State'] == state.upper()
+
+
+
+    prec_bin_min = bin_yield[c].min()['Prec_sigma_bin']
+    prec_bin_max = bin_yield[c].max()['Prec_sigma_bin']    
+    x_offset = prec_bin_min-2
+
     with sns.axes_style("ticks"):
        # g = sns.barplot(x='Prec_sigma_bin', y='Yield_ana_to_yield', data=bin_yield[c], 
        #            palette=colors, ci=95, orient='v', saturation=1, 
        #            ax=ax)
         g = sns.barplot(x='Prec_sigma_bin', y='Yield_ana_to_yield,weight', estimator=weighted_mean,
-                    data=bin_yield[c], palette=colors, ci=95, orient='v', saturation=1,
+                    data=bin_yield[c], palette=colors[x_offset::], ci=95, orient='v', saturation=1,
                     ax=ax)
 
         sns.despine()
-    
+
     ax.set(xticks=np.arange(-0.5,14.5,1), xticklabels=x_txt)
+
+    # move bars to adjust insufficient bins range on the left
+    if x_offset>0:
+        # Move bar
+        for i, patch in enumerate(ax.patches):
+            patch.set_x(patch.get_x() + x_offset)
+    
+        # Move error bar
+        for i, line in enumerate(ax.lines):
+            line.set_xdata(line.get_xdata() + x_offset)
     
     # option to plot xticklabel 
     if xtick:
@@ -90,7 +107,22 @@ def plot_bar(bin_yield, ax, state='Illinois', xtick=True):
     ax.set_xlabel("")
 
     ax.text(0.5, 0.15, state, transform=ax.transAxes, fontsize=14, ha='center') #,fontweight='bold')
-#     ax.text(-0.15, 1, 'a', fontsize=16, transform=axes[0,0].transAxes, fontweight='bold')
+
+    # Calculte exteme drought and rainfall impact to show on bar chart
+    c5 = bin_yield['Prec_sigma_bin']<4 # all drought
+
+    v_drought = bin_yield[c&c5]['Yield_ana_to_yield_area'].sum()/bin_yield[c&c5]['Area'].sum()
+    
+    c6 = bin_yield['Prec_sigma_bin']>12 # all rain 
+    v_rain = bin_yield[c&c6]['Yield_ana_to_yield_area'].sum()/bin_yield[c&c6]['Area'].sum()
+
+
+    ax.text(0.02, 0.9, "{0:.1f}%".format(v_drought*100), transform=ax.transAxes,
+                   fontsize=10, color=colors[0])
+
+    ax.text(0.85, 0.9,"{0:.1f}%".format(v_rain*100), transform=ax.transAxes,
+                   fontsize=10, color=colors[-1])
+
     # Change tick label color 
     [t.set_color(colors[0]) for i,t in enumerate(ax.xaxis.get_ticklabels()) if i<3]
     [t.set_color(colors[-1]) for i,t in enumerate(ax.xaxis.get_ticklabels()) if i>=11]
@@ -145,14 +177,14 @@ def plot_map(df, fig, ax, type='Drought'):
 # Customize x and y label for barplot
 def set_x_y_label(ax, x=False, y=True):
     if x: 
-        ax.set_xlabel('Precipitation deviation ($\sigma$)',labelpad=30, fontsize=12)
-        ax.text(0.0, -0.42, 'Extremely\ndry', transform=ax.transAxes, fontsize=10,
+        ax.set_xlabel('Precipitation anomaly ($\sigma$)',labelpad=30, fontsize=12)
+        ax.text(0.0, -0.42, 'Extreme\ndry', transform=ax.transAxes, fontsize=10,
                                       color=colors[0])
-        ax.text(0.25, -0.42, 'Normal\ndry', transform=ax.transAxes, fontsize=10,
+        ax.text(0.25, -0.42, 'Moderate\ndry', transform=ax.transAxes, fontsize=10,
                        color=colors[2])
-        ax.text(0.5, -0.42, 'Normal\nwet', transform=ax.transAxes, fontsize=10,
+        ax.text(0.5, -0.42, 'Moderate\nwet', transform=ax.transAxes, fontsize=10,
                        color=colors[6])
-        ax.text(0.75, -0.42, 'Extremely\n wet', transform=ax.transAxes, fontsize=10,
+        ax.text(0.75, -0.42, 'Extreme\n wet', transform=ax.transAxes, fontsize=10,
                        color=colors[-1])
     if y:
         ax.set_ylabel('Yield change (%)', fontsize=12)
@@ -216,7 +248,13 @@ def make_plot():
     
     plot_bar(bin_yield, ax12, state='North Dakota',xtick=False)
     set_x_y_label(ax12)
-    
+
+    # Add panel label 
+    l = [chr(i) for i in range(ord('c'), ord('n')+1)]
+    for i, axx in enumerate ([ax1,ax2,ax3,ax4,ax5,ax6,ax7,ax8,ax9,ax10,ax11,ax12]):
+        axx.text(-0.15, 1, l[i], fontsize=16, transform=axx.transAxes, fontweight='bold')
+
+
     
     # ax_m2 = plt.subplot(gs[3:5, 1:3], projection=ccrs.LambertConformal()) # Map 2
     
@@ -226,6 +264,8 @@ def make_plot():
     plot_map(drought_value, fig, new_ax1)
     new_ax1.text(0.55,0.925,'Extreme drought', transform=new_ax1.transAxes, fontsize=14, fontweight='bold',
                  color=colors[0])
+
+    new_ax1.text(0.0, 1, 'a', fontsize=16, transform=new_ax1.transAxes, fontweight='bold')
     
     new_pos2 = [0.32717391304347831*0.55, 0.25785714285714278*0.9, 0.3706521739130435*1.5, 0.24357142857142866*1.2]
     new_ax2 = plt.axes(new_pos2, projection=ccrs.LambertConformal())
@@ -233,11 +273,13 @@ def make_plot():
     new_ax2.text(0.55,0.925,'Extreme rainfall', transform=new_ax2.transAxes,fontsize=14, fontweight='bold',
                 color=colors[-1])
     new_ax2.patch.set_visible(False)
+    new_ax2.text(0.0, 1, 'b', fontsize=16, transform=new_ax2.transAxes, fontweight='bold')
     
     
     plt.subplots_adjust(top=0.95, bottom=0.1, left=0.05, right=0.95, hspace=0.1)
+
     
-    plt.savefig('../figure/figure2.pdf')
+    plt.savefig('../figure/figure2_test.pdf')
 
 
 if __name__ == "__main__":
