@@ -145,12 +145,16 @@ def figure_data(level='State'):
     return rain_state_w, drought_state_w
 
 
-def make_plot():
+def make_plot(soilvar='awc'):
     # colors for prec, tmax, area, soil
     color_var={'Prec_mean_weighted':colors[-1], 'Tmax_mean_weighted':colors[0], 
-               'Area':'#525252', 'awc_weighted':'#995D12'}
+               'Area':'#525252', soilvar+'_weighted':'#995D12'}
 
-    x_txt = ['Prec_mean_weighted','Tmax_mean_weighted','Area','awc_weighted']
+    soilvar_label = {'ksat':'Soil saturated hydraulic conductivity (cm/hr)',
+                     'clay': 'Soil clay percentage (%)',
+                     'awc':'Soil available water content (m$^3$/m$^3$)'}
+
+    x_txt = ['Prec_mean_weighted','Tmax_mean_weighted','Area',soilvar+'_weighted']
     
     fig, axes = plt.subplots(2,len(x_txt), figsize=(14,7))
     
@@ -189,7 +193,7 @@ def make_plot():
     
     # Add xlabel
     xlabel_txt = [u'Precipitation (mm)', 'Maximum temperature (${^\circ}$C)', 'Harvest area (10$^3$acres)', 
-                  'Soil available water content (m$^3$/m$^3$)']
+                  soilvar_label[soilvar]]
     for i in range(len(x_txt)):
         axes.flatten()[i].set_xlabel(xlabel_txt[i], fontsize=12)
         axes.flatten()[i+4].set_xlabel(xlabel_txt[i], fontsize=12)
@@ -207,15 +211,15 @@ def make_plot():
     
     plt.subplots_adjust(left=0.075, right=0.95, top=0.925, hspace=0.4, wspace=0.3)
     
-    plt.savefig('../figure/figure3_%s.pdf'%level)
+    plt.savefig('../figure/figure3_%s_%s.pdf'%(level,soilvar))
 
-    print('figure file %s level saved'%level)
+    print('figure file %s_%s level saved'%(level,soilvar))
 
 
 if __name__ == "__main__":
     colors = define_colors()
-    level = 'FIPS'
-   # level = 'State'
+   # level = 'FIPS'
+    level = 'State'
     rain_state_w, drought_state_w = figure_data(level=level)
-    make_plot()
+    make_plot(soilvar='ksat')
 
