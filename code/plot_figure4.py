@@ -3,20 +3,43 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from plot_figure1 import define_colors
+from plot_figure3 import column_weighted
 
 
 # Append a repeatative value for plt.step function
 def append_value(ds):
     return ds.append(pd.Series(ds.loc[15],index=[16]))
 
+# Calculate bin model values
+def fig_data():
+    agmip = pd.read_csv('../data/result/agmip_obs_yield_full.csv')
+    agmip.iloc[:,7::] = agmip.iloc[:,7::]*100
+    agmip.iloc[:,3] = agmip.iloc[:,3]*100
+
+    model_names = ['obs','cgms-wofost','clm-crop','epic-boku','epic-iiasa','gepic','lpj-guess',
+                      'lpjml','orchidee-crop','papsim','pdssat','pegasus','pepic']
+
+    b_prec = pd.DataFrame(np.zeros([14,13]), index=range(2,16), columns=model_names)
+    b_tmax = pd.DataFrame(np.zeros([14,13]), index=range(2,16), columns=model_names)
+
+    for m in model_names:
+        temp=agmip[['Prec_sigma_bin','Tmax_sigma_bin',m,'Area']].dropna()
+
+        b1 = column_weighted(temp, 'Prec_sigma_bin', m, 'Area')
+        b2 = column_weighted(temp, 'Tmax_sigma_bin', m, 'Area')
+
+        b_prec[m] = b1.set_index('Prec_sigma_bin') 
+        b_tmax[m] = b2.set_index('Tmax_sigma_bin')
+    return b_prec, b_tmax
+
+
 sns.set()
 sns.set_context("notebook")
 sns.set_style('ticks')    
 
 colors = define_colors()
-b_prec = pd.read_csv('../data/result/agmip_prec_bin.csv', index_col=0)
-b_prec.iloc[:,:] = b_prec.iloc[:,:] * 100
-#b_tmax.to_csv('../data/result/agmip_tmax_bin.csv')
+b_prec, b_tmax = fig_data()
+#b_prec = pd.read_csv('../data/result/agmip_prec_bin.csv', index_col=0)
 
 
 # Sample plot use step, show response of individual model but no names
@@ -54,13 +77,13 @@ ax.set_xlim(1,15)
 ax.set(xticks=np.arange(1,15,1), xticklabels=(x_txt))
 
 ax.set_ylabel('Yield change (%)', fontsize=12)
-ax.set_xlabel('Precipitation deviation ($\sigma$)',labelpad=15, fontsize=12)
+ax.set_xlabel('Precipitation anomaly ($\sigma$)',labelpad=15, fontsize=12)
 
 ax.text(0.00+0.04, -0.1, 'Extremely dry', transform=ax.transAxes, fontsize=10,
                color=colors[0])
-ax.text(0.25+0.04, -0.1, 'Normal dry', transform=ax.transAxes, fontsize=10,
+ax.text(0.25+0.04, -0.1, 'Moderate dry', transform=ax.transAxes, fontsize=10,
                color=colors[2])
-ax.text(0.5+0.04, -0.1, 'Normal wet', transform=ax.transAxes, fontsize=10,
+ax.text(0.5+0.04, -0.1, 'Moderate wet', transform=ax.transAxes, fontsize=10,
                color=colors[6])
 ax.text(0.75+0.04, -0.1, 'Extremely wet', transform=ax.transAxes, fontsize=10,
                color=colors[-1])
