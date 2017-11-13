@@ -125,15 +125,16 @@ def figure_data(level='State'):
     
     c1 = bin_yield['Prec_sigma_bin']>12
     
+    c6 = bin_yield['Year']>2000
     rain_state_w = (column_weighted(bin_yield[c1], level, 'Yield_ana_to_yield','Area')).\
                     merge(column_weighted(bin_yield, level, var_list, 'Area')).\
-                    merge(bin_yield.groupby(level).mean()['Area'].reset_index())
+                    merge(bin_yield[c6].groupby(level).mean()['Area'].reset_index())
     
     c2 = bin_yield['Prec_sigma_bin']<4
     
     drought_state_w = (column_weighted(bin_yield[c2], level, 'Yield_ana_to_yield','Area')).\
                         merge(column_weighted(bin_yield, level, var_list, 'Area')).\
-                        merge(bin_yield.groupby(level).mean()['Area'].reset_index())
+                        merge(bin_yield[c6].groupby(level).mean()['Area'].reset_index())
             
     rain_state_w['Yield_ana_to_yield_weighted'] = rain_state_w['Yield_ana_to_yield_weighted']*100     
     drought_state_w['Yield_ana_to_yield_weighted'] = drought_state_w['Yield_ana_to_yield_weighted']*100     
@@ -154,7 +155,7 @@ def make_plot(soilvar='awc'):
                      'clay': 'Soil clay percentage (%)',
                      'awc':'Soil available water content (m$^3$/m$^3$)'}
 
-    x_txt = ['Prec_mean_weighted','Tmax_mean_weighted','Area',soilvar+'_weighted']
+    x_txt = ['Prec_mean_weighted','Tmax_mean_weighted',soilvar+'_weighted', 'Area']
     
     fig, axes = plt.subplots(2,len(x_txt), figsize=(14,7))
     
@@ -178,8 +179,8 @@ def make_plot(soilvar='awc'):
         axes.flatten()[0].set_xlim(0, 700) # Prec
         axes.flatten()[4].set_xlim(0, 700)
         
-        axes.flatten()[2].set_xlim(-10, 140) # Area
-        axes.flatten()[6].set_xlim(-10, 140)
+        axes.flatten()[3].set_xlim(-10, 140) # Area
+        axes.flatten()[7].set_xlim(-10, 140)
 
         [ax.set_ylim(-50,30) for ax in axes.flatten()]
 #        [axes.flatten()[i].set_ylim(-50,30) for i in range(len(x_txt))]
@@ -192,8 +193,8 @@ def make_plot(soilvar='awc'):
      
     
     # Add xlabel
-    xlabel_txt = [u'Precipitation (mm)', 'Maximum temperature (${^\circ}$C)', 'Harvest area (10$^3$acres)', 
-                  soilvar_label[soilvar]]
+    xlabel_txt = [u'Precipitation (mm)', 'Maximum temperature (${^\circ}$C)',
+                  soilvar_label[soilvar], 'Harvest area (10$^3$acres)']
     for i in range(len(x_txt)):
         axes.flatten()[i].set_xlabel(xlabel_txt[i], fontsize=12)
         axes.flatten()[i+4].set_xlabel(xlabel_txt[i], fontsize=12)
