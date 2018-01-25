@@ -42,7 +42,7 @@ def fig_data():
                                                 'loss_ratio_Cold Wet Weather'
                                                   ]]).divide(bin_yield_rma.groupby('Prec_sigma_bin').sum()['Area'],axis=0)
 
-    loss_ratio_Prec.columns=['Drought', 'Heat', 'Excess Rain','Cold Weather']
+    loss_ratio_Prec.columns=['Drought','Heat','Excess Rain','Cold Weather']
     
     # Panel C: temperature interaction
     c3 = bin_yield['Prec_sigma_bin']<4 # all drought
@@ -154,7 +154,7 @@ def plot_panel_c(b_drought_rain, axes):
     
     # Rearrange xtick and label            
    # x_txt = ['Dry(all)', 'Dry+hot', 'Dry-hot', 'Rain(all)','Rain+cold','Rain-cold']
-    x_txt = ['Dry(all)', 'Dry+heat', 'Dry-heat', 'Wet(all)','Wet+cold','Wet-cold']
+    x_txt = ['Dry (all)', 'Dry+heat', 'Dry-heat', 'Wet (all)','Wet+cold','Wet-cold']
     xtick = np.arange(0,6.0)
     xtick[3::] = xtick[3::] + 0.5
     
@@ -332,6 +332,7 @@ def make_plot():
     axes[1,1].text(1,y, 'Emerged(56%)',ha='center', fontsize=8)
     axes[1,1].text(2,y, 'Sillking(85%)',ha='center', fontsize=8)
     axes[1,1].text(3,y, 'Dough(46%)',ha='center', fontsize=8)
+
     
     y = 1.8 + 0.05
     axes[1,1].text(0,y, 'Rain: 105mm',ha='center', color=colors[-1],fontsize=8)
@@ -345,6 +346,11 @@ def make_plot():
     axes[1,1].text(2,y, '29.6${^\circ}$C',ha='center',color=colors[0],fontsize=8)
     axes[1,1].text(3,y, '28.7${^\circ}$C',ha='center',color=colors[0],fontsize=8)
 
+    # vertical lines 
+    axes[1,1].plot([0.5, 0.5],[1.7, 2],'--', color='grey', lw=0.75)
+    axes[1,1].plot([1.5, 1.5],[1.7, 2],'--', color='grey', lw=0.75)
+    axes[1,1].plot([2.5, 2.5],[1.7, 2],'--', color='grey', lw=0.75)
+
 #    new_labels = ['Drought', 'Excess rain']
 #    for t, l in zip(f2.legend_.texts, new_labels): t.set_text(l)
 
@@ -354,7 +360,6 @@ def make_plot():
     
     plt.subplots_adjust(top=0.95, bottom=0.08, hspace=0.3)
     
-   # plt.savefig('../figure/fig1_test4.png')
     plt.savefig('../figure/figure1.pdf')
 
 if __name__ == "__main__":
