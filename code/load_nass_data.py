@@ -20,7 +20,7 @@ def file_year_txt(var):
 
 def file_level_txt(var):
     level = 'county'
-    if var in ['condition','progress']: 
+    if var in ['condition','progress','grain_population']: 
         level = 'state'
     return level 
 
@@ -134,30 +134,56 @@ Detrended yield for each county 08/28/17
 Add Harvested area anomaly 09/08
 Usage: corn_sample, trend_para = add_yield_anomaly(corn_combined)
 """
-def add_yield_anomaly(corn_combined, rerun=False):
+def add_yield_anomaly(corn_combined, rerun=False, fitting_type='linear'):
+
     if rerun:
         # format the yield data
         combined_sample = corn_combined[['FIPS','Year','Yield','Area','State']].dropna().set_index(['FIPS','Year'])
         s = combined_sample.unstack('FIPS')['Yield'].shape  # size, year by FIPS
-        B = np.zeros([s[1],6]) # a,b,n, three parameters (intercept, slope, and sample number) for linear trend of yield and area, 
+
+
+        if fitting_type=='linear':
+            formula_txt = "Yield ~ Year"
+            B = np.zeros([s[1],6]) # a,b,n, three parameters (intercept, slope, and sample number) for linear trend of yield and area, 
+            trend_para = pd.DataFrame(B, index=combined_sample.unstack('FIPS')['Yield'].columns, \
+                                  columns=['Yield_intercept','Yield_slope','Yield_N',
+                                          'Area_intercept','Area_slope','Area_N'])
+        if fitting_type=='quadratic':
+            formula_txt = "Yield ~ Year + np.power(Year, 2)"
+            B = np.zeros([s[1],7]) # a,b,n, four parameters (intercept, slope_1,slope_2, and sample number) for linear trend of yield and area, 
+            trend_para = pd.DataFrame(B, index=combined_sample.unstack('FIPS')['Yield'].columns, \
+                                  columns=['Yield_intercept','Yield_slope1','Yield_slope2','Yield_N',
+                                          'Area_intercept','Area_slope','Area_N'])
+
 
         # estimate linear trend for each column (FIPS)
         for i in range(s[1]):
             # First make yield anomaly
             temp = combined_sample.unstack('FIPS')['Yield'].iloc[:,i].to_frame('Yield').reset_index()
-            mod_fit = smf.ols(formula="Yield ~ Year", data=temp).fit()
-            B[i,0],B[i,1],B[i,2]= mod_fit.params[0], mod_fit.params[1], temp['Yield'].dropna().shape[0]
+            mod_fit = smf.ols(formula=formula_txt, data=temp).fit()
+            if fitting_type == 'linear':
+                B[i,0],B[i,1],B[i,2]= mod_fit.params[0], mod_fit.params[1], temp['Yield'].dropna().shape[0]
+            if fitting_type=='quadratic':
+                B[i,0],B[i,1],B[i,2], B[i,3]=mod_fit.params[0],mod_fit.params[1],mod_fit.params[2],temp['Yield'].dropna().shape[0]
             
             # Second make area anomaly
             temp2 = combined_sample.unstack('FIPS')['Area'].iloc[:,i].to_frame('Area').reset_index()
             mod_fit2 = smf.ols(formula="Area ~ Year", data=temp2).fit()
-            B[i,3],B[i,4],B[i,5]= mod_fit2.params[0], mod_fit2.params[1], temp2['Area'].dropna().shape[0]
+            if fitting_type == 'linear':
+                B[i,3],B[i,4],B[i,5]= mod_fit2.params[0], mod_fit2.params[1], temp2['Area'].dropna().shape[0]
+            if fitting_type=='quadratic':
+                B[i,4],B[i,5],B[i,6]= mod_fit2.params[0], mod_fit2.params[1], temp2['Area'].dropna().shape[0]
             
 
-        trend_para = pd.DataFrame(B, index=combined_sample.unstack('FIPS')['Yield'].columns, \
-                                  columns=['Yield_intercept','Yield_slope','Yield_N',
-                                          'Area_intercept','Area_slope','Area_N'])
-        
+    #    if fitting_type=='linear':
+    #        trend_para = pd.DataFrame(B, index=combined_sample.unstack('FIPS')['Yield'].columns, \
+    #                              columns=['Yield_intercept','Yield_slope','Yield_N',
+    #                                      'Area_intercept','Area_slope','Area_N'])
+    #    if fitting_type=='quadratic':
+    #        trend_para = pd.DataFrame(B, index=combined_sample.unstack('FIPS')['Yield'].columns, \
+    #                              columns=['Yield_intercept','Yield_slope1','Yield_slope2','Yield_N',
+    #                                      'Area_intercept','Area_slope','Area_N'])
+    #
         yield_ana_sample = combined_sample.unstack('FIPS')['Yield'].copy()
         area_ana_sample = combined_sample.unstack('FIPS')['Area'].copy()
 
@@ -166,11 +192,19 @@ def add_yield_anomaly(corn_combined, rerun=False):
         year_start = combined_sample.index.get_level_values(1).min()
         year_end = combined_sample.index.get_level_values(1).max()
         num_year = year_end - year_start + 1
-        
-        array_yield_ana = yield_ana_sample.values - \
-            np.array([np.arange(year_start, year_end + 1),] * s[1]).T \
-            * np.array([trend_para.T.loc['Yield_slope'].values,] * num_year) \
-            - np.array([trend_para.T.loc['Yield_intercept'].values,] * num_year)
+
+        if fitting_type == 'linear':
+            array_yield_ana = yield_ana_sample.values - \
+                np.array([np.arange(year_start, year_end + 1),] * s[1]).T \
+                * np.array([trend_para.T.loc['Yield_slope'].values,] * num_year) \
+                - np.array([trend_para.T.loc['Yield_intercept'].values,] * num_year)
+        if fitting_type=='quadratic':
+            array_yield_ana = yield_ana_sample.values - \
+                np.array([np.arange(year_start, year_end + 1),] * s[1]).T \
+                * np.array([trend_para.T.loc['Yield_slope1'].values,] * num_year) \
+                - np.power(np.array([np.arange(year_start, year_end + 1),] * s[1]).T, 2) \
+                * np.array([trend_para.T.loc['Yield_slope2'].values,] * num_year) \
+                - np.array([trend_para.T.loc['Yield_intercept'].values,] * num_year)
         
         yield_ana_sample.iloc[:,:] = array_yield_ana
         
@@ -187,13 +221,13 @@ def add_yield_anomaly(corn_combined, rerun=False):
             merge(yield_ana_sample.stack().reset_index().rename(columns={0:'Yield_ana'})).\
             merge(area_ana_sample.stack().reset_index().rename(columns={0:'Area_ana'}))
         # save for reuse
-        combined_sample.to_csv('../data/result/corn_yield_area_anomaly.csv', index=False)
-        trend_para.to_csv('../data/result/corn_yield_area_trend_para.csv', index=False)
+        combined_sample.to_csv('../data/result/corn_yield_area_anomaly_%s.csv'%fitting_type, index=False)
+        trend_para.to_csv('../data/result/corn_yield_area_trend_para_%s.csv'%fitting_type, index=False)
         print 'file saved to ../data/result'
     else:
         print 'Load variable from saved files'
-        combined_sample = pd.read_csv('../data/result/corn_yield_area_anomaly.csv',dtype={'FIPS':object})
-        trend_para = pd.read_csv('../data/result/corn_yield_area_trend_para.csv')
+        combined_sample = pd.read_csv('../data/result/corn_yield_area_anomaly_%s.csv'%fitting_type,dtype={'FIPS':object})
+        trend_para = pd.read_csv('../data/result/corn_yield_area_trend_para_%s.csv'%fitting_type)
 
     return combined_sample, trend_para
 
@@ -243,3 +277,48 @@ def irrigation_percent(level='State'):
     area_combined = corn_area.merge(corn_irr_area[['FIPS','Year','Irr_Area']], on=['FIPS','Year'])
     
     return area_combined.groupby('State').sum()['Irr_Area']/area_combined.groupby(level).sum()['Area']
+
+
+"""
+Save NASS data for crop modeling purpose
+"""
+def save_nass_yield_area():
+    # Load harvest area 
+    corn_area = load_nass_county_data('corn', 'grain_areaharvested', 'allstates', 1981, 2016)
+    corn_area.rename(columns={'Value':'area'}, inplace=True)
+    corn_area.dropna(inplace=True)
+    
+    corn_area_irr = load_nass_county_data('corn', 'grain_irrigated_areaharvested', 'allstates', 1981, 2016)
+    corn_area_irr.rename(columns={'Value':'area_irr'}, inplace=True)
+    
+    corn_area_noirr = load_nass_county_data('corn', 'grain_nonirrigated_areaharvested', 'allstates', 1981, 2016)
+    corn_area_noirr.rename(columns={'Value':'area_noirr'}, inplace=True)
+    
+    # Load yield data
+    corn_yield = load_nass_county_data('corn', 'grain_yield', 'allstates', 1981, 2016)
+    corn_yield.rename(columns={'Value':'yield'}, inplace=True)
+    
+    corn_yield_irr = load_nass_county_data('corn', 'grain_irrigated_yield', 'allstates', 1981, 2016)
+    corn_yield_irr.rename(columns={'Value':'yield_irr'}, inplace=True)
+    
+    corn_yield_noirr = load_nass_county_data('corn', 'grain_nonirrigated_yield', 'allstates', 1981, 2016)
+    corn_yield_noirr.rename(columns={'Value':'yield_noirr'}, inplace=True)
+
+    # Combine yield and harvest area
+    df_final = corn_yield[['Year','FIPS','County','State','yield']].dropna().merge(corn_yield_irr[['Year','FIPS','yield_irr']],
+                                                            on=['Year','FIPS'],how='left') \
+                                                     .merge(corn_yield_noirr[['Year','FIPS','yield_noirr']],
+                                                            on=['Year','FIPS'],how='left') \
+                                                     .merge(corn_area[['Year','FIPS','area']],
+                                                            on=['Year','FIPS'],how='left') \
+                                                     .merge(corn_area_irr[['Year','FIPS','area_irr']],
+                                                            on=['Year','FIPS'],how='left') \
+                                                     .merge(corn_area_noirr[['Year','FIPS','area_noirr']],
+                                                            on=['Year','FIPS'],how='left')
+    df_final.rename(columns={'Year':'year'}, inplace=True)
+    df_final.to_csv('../../crop_modeling/data/nass_yield_area_1981_2016.csv', index=False)
+    print('NASS data saved to csv file in the crop modeling data folder')
+
+
+if __name__ == "__main__":
+    save_nass_yield_area()
