@@ -119,16 +119,93 @@ def heavy_rain(percent=False,month_start=5, month_end=8):
 
 
 # Load growing season climate, May to Aug
-def load_gs_climate(var='ppt'):
-    dr = pd.date_range('1981','2016',freq='A')
-    df = load_prism_county_year_range(var, 1981, 2016, freq='1M')
-    
-    temp = (df.iloc[range(4,420,12),:].values + df.iloc[range(5,420,12),:].values +
-            df.iloc[range(6,420,12),:].values + df.iloc[range(7,420,12),:].values)
-    
-    if var != 'ppt':
-        temp = temp/4
-            
-    df_gs = pd.DataFrame(temp, index=dr, columns=df.columns)
+def load_gs_climate(var='ppt', rerun=True):
+    if rerun:
+        dr = pd.date_range('1981','2017',freq='A')
+        df = load_prism_county_year_range(var, 1981, 2016, freq='1M')
+        
+        temp = (df.iloc[range(4,432,12),:].values + df.iloc[range(5,432,12),:].values +
+                df.iloc[range(6,432,12),:].values + df.iloc[range(7,432,12),:].values)
+        
+        if var != 'ppt':
+            temp = temp/4
+                
+        df_gs = pd.DataFrame(temp, index=dr, columns=df.columns)
+        df_gs.to_csv('../data/result/%s_growing_season.csv'%var, index=False)
+    else:
+        df_gs = pd.read_csv('../data/result/%s_growing_season.csv'%var, dtype={'FIPS':object})
     
     return df_gs
+
+
+"""
+Load PRISM data monthly and then convert the data to crop model format
+"""
+def convert_to_gs_monthly(df_mon,var_name):
+    # Select growing season
+    df_gs = df_mon[(df_mon.index.month>4)&(df_mon.index.month<10)]
+
+    # make some rearrangement of the data layout 
+    df_gs_1 = df_gs.stack().to_frame('value').reset_index()
+    df_gs_1.rename(columns={'level_1':'FIPS'}, inplace=True)
+
+    # Add year and month as column
+    df_gs_1['year'] = df_gs_1['level_0'].apply(lambda x: x.year)
+    df_gs_1['mon'] = df_gs_1['level_0'].apply(lambda x: x.month)
+
+    # Seperate monthly lst as column by mutle-index and pivot
+    df_gs_2 = df_gs_1.iloc[:,1::].set_index(['year','FIPS']).pivot(columns='mon')
+
+    # drop multi-index of columns
+    df_gs_2.columns = df_gs_2.columns.droplevel(0)
+
+    # rename lst column
+    df_gs_2 = df_gs_2.reset_index().rename(columns={5:'%s5'%var_name,
+                                                    6:'%s6'%var_name,
+                                                    7:'%s7'%var_name,
+                                                    8:'%s8'%var_name,
+                                                    9:'%s9'%var_name})
+    return df_gs_2
+
+
+"""
+To generate climate data (temperature, vpd, and vpd)
+"""
+def get_climate_for_crop_model():
+    # Load monthly data
+    tmax_monthly = load_prism_county_year_range('tmax', 1981, 2016, freq='1M')
+    tmin_monthly = load_prism_county_year_range('tmin', 1981, 2016, freq='1M')
+    vpdmin_monthly = load_prism_county_year_range('vpdmin', 1981, 2016, freq='1M')
+    vpdmax_monthly = load_prism_county_year_range('vpdmax', 1981, 2016, freq='1M')
+    prec_monthly = load_prism_county_year_range('ppt', 1981, 2016, freq='1M')
+    
+    # Growing season monthly
+    precip_gs = convert_to_gs_monthly(prec_monthly,'precip')
+    tmax_gs = convert_to_gs_monthly(tmax_monthly,'tmax')
+    tmin_gs = convert_to_gs_monthly(tmin_monthly,'tmin')
+    vpdmax_gs = convert_to_gs_monthly(vpdmax_monthly,'vpdmax')
+    vpdmin_gs = convert_to_gs_monthly(vpdmin_monthly,'vpdmin')
+    
+    # Get averaged temperature and vpd
+    tave_gs = tmax_gs.copy()
+    tave_gs.iloc[:,2::] = (tmax_gs.iloc[:,2::].values + tmin_gs.iloc[:,2::].values)/2
+    tave_gs.rename(columns={'tmax5':'tave5','tmax6':'tave6','tmax7':'tave7','tmax8':'tave8','tmax9':'tave9'},
+                   inplace=True)
+    
+    vpdave_gs = vpdmax_gs.copy()
+    vpdave_gs.iloc[:,2::] = (vpdmax_gs.iloc[:,2::].values + vpdmin_gs.iloc[:,2::].values)/2
+    vpdave_gs.rename(columns={'vpdmax5':'vpdave5','vpdmax6':'vpdave6',
+                              'vpdmax7':'vpdave7','vpdmax8':'vpdave8','vpdmax9':'vpdave9'},
+                     inplace=True)
+    
+    dfs = [tmax_gs, tmin_gs, tave_gs, vpdmax_gs, vpdmin_gs, vpdave_gs, precip_gs]
+    df_final = reduce(lambda left,right: pd.merge(left,right,on=['year','FIPS']), dfs)
+    
+    df_final.to_csv('~/Project/crop_modeling/data/prism_climate_growing_season_1981_2016.csv',index=False)
+    print('Climate data saved to ~/Project/crop_modeling/data/prism_climate_growing_season_1981_2016.csv')
+    return df_final
+
+
+if __name__ == '__main__':
+    # save climate data for crop model
+    df = get_climate_for_crop_model()
