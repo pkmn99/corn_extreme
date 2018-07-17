@@ -171,13 +171,13 @@ def convert_to_gs_monthly(df_mon,var_name):
 """
 To generate climate data (temperature, vpd, and vpd)
 """
-def get_climate_for_crop_model():
+def get_climate_for_crop_model(year_start=1981,year_end=2016):
     # Load monthly data
-    tmax_monthly = load_prism_county_year_range('tmax', 1981, 2016, freq='1M')
-    tmin_monthly = load_prism_county_year_range('tmin', 1981, 2016, freq='1M')
-    vpdmin_monthly = load_prism_county_year_range('vpdmin', 1981, 2016, freq='1M')
-    vpdmax_monthly = load_prism_county_year_range('vpdmax', 1981, 2016, freq='1M')
-    prec_monthly = load_prism_county_year_range('ppt', 1981, 2016, freq='1M')
+    tmax_monthly = load_prism_county_year_range('tmax', year_start, year_end, freq='1M')
+    tmin_monthly = load_prism_county_year_range('tmin', year_start, year_end, freq='1M')
+    vpdmin_monthly = load_prism_county_year_range('vpdmin', year_start, year_end, freq='1M')
+    vpdmax_monthly = load_prism_county_year_range('vpdmax', year_start, year_end, freq='1M')
+    prec_monthly = load_prism_county_year_range('ppt', year_start, year_end, freq='1M')
     
     # Growing season monthly
     precip_gs = convert_to_gs_monthly(prec_monthly,'precip')
@@ -201,11 +201,11 @@ def get_climate_for_crop_model():
     dfs = [tmax_gs, tmin_gs, tave_gs, vpdmax_gs, vpdmin_gs, vpdave_gs, precip_gs]
     df_final = reduce(lambda left,right: pd.merge(left,right,on=['year','FIPS']), dfs)
     
-    df_final.to_csv('~/Project/crop_modeling/data/prism_climate_growing_season_1981_2016.csv',index=False)
-    print('Climate data saved to ~/Project/crop_modeling/data/prism_climate_growing_season_1981_2016.csv')
+    df_final.to_csv('~/Project/crop_modeling/data/prism_climate_growing_season_%d_%d.csv'%(year_start,year_end),index=False)
+    print('Climate data saved to ~/Project/crop_modeling/data/prism_climate_growing_season_%d_%d.csv'%(year_start,year_end))
     return df_final
 
 
 if __name__ == '__main__':
     # save climate data for crop model
-    df = get_climate_for_crop_model()
+    df = get_climate_for_crop_model(year_start=2017,year_end=2018)
