@@ -135,5 +135,43 @@ def save_yield_obs_anamaly():
     print('corn_area_yield_anomaly_1981_2010_05deg.nc')
 
 
+"""
+Convert 3d xarry data array to pandas data frame by removeing na values
+"""
+def xarray2dataframe(da, name):
+    return da.to_series().dropna().rename(name).to_frame().reset_index()
+
+"""
+Load agmip model data, match with obs, prec, and tmax bin and save to csv
+"""
+def agmip_to_csv():
+    model_names = ['obs','cgms-wofost','clm-crop','epic-boku','epic-iiasa','gepic','lpj-guess',
+                  'lpjml','orchidee-crop','papsim','pdssat','pegasus','pepic']
+    ds_obs = xr.open_dataset('../data/result/corn_area_yield_anomaly_1981_2010_05deg.nc')
+
+    ds_obs['yield_ana_to_yield'] = ds_obs['yield_ana'] / ds_obs['yield_trend']
+
+
+    rank = xr.open_dataset('../data/result/corn_Prec_Tmax_sigma_bin_1981_2010_05deg.nc')
+
+    # prepare dataframe from obs
+    t = xarray2dataframe(ds_obs['yield_ana_to_yield'], 'obs')
+    t1 = xarray2dataframe(ds_obs['area'], 'Area')
+    t2 = xarray2dataframe(rank['Prec_sigma_bin'], 'Prec_sigma_bin')
+    t3 = xarray2dataframe(rank['Tmax_sigma_bin'], 'Tmax_sigma_bin')
+    t = t.merge(t1, how='left').merge(t2, how='left').merge(t3, how='left')
+
+    # Load model, covert and merge 
+    for m in model_names[1::]:
+        ds = load_agmip_data(m, anomaly=True)
+        ds['yield_mai_ana_to_yield'] = ds['yield_mai_ana'] / ds['yield_mai_trend']
+        t5 = xarray2dataframe(ds['yield_mai_ana_to_yield'], m)
+#        t5 = ds['yield_mai_ana_to_yield'].to_series().rename(m).to_frame().rename(m)
+        t = t.merge(t5, on=['lat','lon','time'], how='left')
+     
+    t.to_csv('../data/result/agmip_obs_yield_full.csv', index=None)
+    print('agmip converted to csv, file saved')
+
 if __name__ == '__main__':
-    save_agmip_anomaly()
+#    save_agmip_anomaly()
+    agmip_to_csv()
