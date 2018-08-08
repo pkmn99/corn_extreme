@@ -12,8 +12,18 @@ variable: corn: 'grain_areaharvested', 'grain_yield', 'condition'
 # 04/04/2017 initial version
 # 06/06 read allstates data
 
-def file_year_txt(var):
-    var_year_txt = '1980-2016'
+# Get end year for file of different crop types 
+def get_end_year(crop_type):
+    s = {'tomatoes':2017,'potatoes':2016,'sweetcorn':2013}
+    return s[crop_type]
+
+def file_year_txt(var,crop='corn'):
+    end_year = get_end_year(crop)
+    if crop == 'corn':
+        var_year_txt = '1980-2016'%end_year
+    else:
+        var_year_txt = '1981-%d'%end_year
+
     if var == 'condition': 
         var_year_txt = '1986-2016'
     return var_year_txt
@@ -59,19 +69,19 @@ def load_nass_county_data(crop, variable, state_name, start_year, end_year):
         data = data[(data['Year']>=start_year) \
                         & (data['Year']<=end_year)].copy()
         
-    elif state_name == 'allstates':
-        if variable in ['grain_areaharvested', 'grain_yield', 'condition',
-                'yield', 'areaharvested','areaplanted']:
+    elif (state_name == 'allstates'):
+        if (variable in ['grain_areaharvested', 'grain_yield', 'condition',
+                'yield', 'areaharvested','areaplanted'])&(crop=='corn'):
             csv_filename1 = ('%s%s_%s_ALLSTATES_%s_%s_part1.csv' %(path_file,
                                                                crop.upper(),
                                                                variable.upper(), 
                                                                level.upper(),
-                                                               file_year_txt(variable)))
+                                                               file_year_txt(variable,crop=crop)))
             csv_filename2 = ('%s%s_%s_ALLSTATES_%s_%s_part2.csv' %(path_file,
                                                                crop.upper(),
                                                                variable.upper(), 
                                                                level.upper(),
-                                                               file_year_txt(variable)))
+                                                               file_year_txt(variable,crop=crop)))
             data_raw1 = my_read_csv(csv_filename1, cols)
             data_raw2 = my_read_csv(csv_filename2, cols)
             data_raw = pd.concat([data_raw1, data_raw2])
@@ -81,7 +91,7 @@ def load_nass_county_data(crop, variable, state_name, start_year, end_year):
                                                                crop.upper(),
                                                                variable.upper(), 
                                                                level.upper(),
-                                                               file_year_txt(variable)))
+                                                               file_year_txt(variable,crop=crop)))
             data_raw = my_read_csv(csv_filename, cols)
         
         data = data_raw[(data_raw['Year']>=start_year) \
@@ -282,26 +292,27 @@ def irrigation_percent(level='State'):
 """
 Save NASS data for crop modeling purpose
 """
-def save_nass_yield_area():
+def save_nass_yield_area(crop_type='corn'):
+    head_txt = {'corn':'grain_','soybean':''}
     # Load harvest area 
-    corn_area = load_nass_county_data('corn', 'grain_areaharvested', 'allstates', 1981, 2016)
+    corn_area = load_nass_county_data(crop_type, '%sareaharvested'%head_txt[crop_type], 'allstates', 1981, 2016)
     corn_area.rename(columns={'Value':'area'}, inplace=True)
     corn_area.dropna(inplace=True)
     
-    corn_area_irr = load_nass_county_data('corn', 'grain_irrigated_areaharvested', 'allstates', 1981, 2016)
+    corn_area_irr = load_nass_county_data(crop_type, '%sirrigated_areaharvested'%head_txt[crop_type], 'allstates', 1981, 2016)
     corn_area_irr.rename(columns={'Value':'area_irr'}, inplace=True)
     
-    corn_area_noirr = load_nass_county_data('corn', 'grain_nonirrigated_areaharvested', 'allstates', 1981, 2016)
+    corn_area_noirr = load_nass_county_data(crop_type, '%snonirrigated_areaharvested'%head_txt[crop_type], 'allstates', 1981, 2016)
     corn_area_noirr.rename(columns={'Value':'area_noirr'}, inplace=True)
     
     # Load yield data
-    corn_yield = load_nass_county_data('corn', 'grain_yield', 'allstates', 1981, 2016)
+    corn_yield = load_nass_county_data(crop_type, '%syield'%head_txt[crop_type], 'allstates', 1981, 2016)
     corn_yield.rename(columns={'Value':'yield'}, inplace=True)
     
-    corn_yield_irr = load_nass_county_data('corn', 'grain_irrigated_yield', 'allstates', 1981, 2016)
+    corn_yield_irr = load_nass_county_data(crop_type, '%sirrigated_yield'%head_txt[crop_type], 'allstates', 1981, 2016)
     corn_yield_irr.rename(columns={'Value':'yield_irr'}, inplace=True)
     
-    corn_yield_noirr = load_nass_county_data('corn', 'grain_nonirrigated_yield', 'allstates', 1981, 2016)
+    corn_yield_noirr = load_nass_county_data(crop_type, '%snonirrigated_yield'%head_txt[crop_type], 'allstates', 1981, 2016)
     corn_yield_noirr.rename(columns={'Value':'yield_noirr'}, inplace=True)
 
     # Combine yield and harvest area
@@ -316,9 +327,36 @@ def save_nass_yield_area():
                                                      .merge(corn_area_noirr[['Year','FIPS','area_noirr']],
                                                             on=['Year','FIPS'],how='left')
     df_final.rename(columns={'Year':'year'}, inplace=True)
-    df_final.to_csv('../../crop_modeling/data/nass_yield_area_1981_2016.csv', index=False)
-    print('NASS data saved to csv file in the crop modeling data folder')
+    df_final.to_csv('../../crop_modeling/data/nass_yield_area_1981_2016_%s.csv'%crop_type, index=False)
+    print('NASS data for %s saved to csv file in the crop modeling data folder'%crop_type)
 
+
+
+"""
+Save NASS F&V data for crop modeling purpose
+"""
+def save_nass_yield_area_FV(crop_type='corn'):
+    end_year = get_end_year(crop_type)
+    # Load harvest area 
+    corn_area = load_nass_county_data(crop_type, 'areaharvested', 'allstates', 1981, end_year)
+    corn_area.rename(columns={'Value':'area'}, inplace=True)
+    corn_area.dropna(inplace=True)
+    
+    # Load yield data
+    corn_yield = load_nass_county_data(crop_type, 'yield', 'allstates', 1981, end_year)
+    corn_yield.rename(columns={'Value':'yield'}, inplace=True)
+    
+    # Combine yield and harvest area
+    df_final = corn_yield[['Year','FIPS','County','State','yield']].dropna() \
+                                                     .merge(corn_area[['Year','FIPS','area']],
+                                                            on=['Year','FIPS'],how='left')
+    df_final.rename(columns={'Year':'year'}, inplace=True)
+    df_final.to_csv('../../crop_modeling/data/nass_yield_area_1981_%d_%s.csv'%(end_year,crop_type), index=False)
+    print('NASS data for %s saved to csv file in the crop modeling data folder'%crop_type)
 
 if __name__ == "__main__":
-    save_nass_yield_area()
+#    save_nass_yield_area()
+#    save_nass_yield_area(crop_type='soybean')
+    save_nass_yield_area_FV(crop_type='tomatoes')
+    save_nass_yield_area_FV(crop_type='potatoes')
+    save_nass_yield_area_FV(crop_type='sweetcorn')
