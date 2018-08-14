@@ -50,16 +50,17 @@ def calculate_rank(df, month_range):
 # df_heavy_rain, df_hrain_time = heavy_rain_percent(months_start=5, month_end=8)
 # """
 def heavy_rain(percent=False,month_start=5, month_end=8):
+    end_year = 2016
     
-    prec_daily = load_prism_county_year_range('ppt', 1981, 2015, freq='1D')
+    prec_daily = load_prism_county_year_range('ppt', 1981, end_year, freq='1D')
     
     # prec_bin_rank = np.arange(0.1,1,0.1) 
 
     # a big np array to save results
-    array = np.zeros([prec_daily.columns.shape[0]*(2015-1981+1),9])
+    array = np.zeros([prec_daily.columns.shape[0]*(end_year-1981+1),9])
     
     # to save the month when the most extreme rainfall occurs, FIPS x Year x Months (e.g., May to Aug) 
-    array2 = np.zeros([prec_daily.columns.shape[0]*(2015-1981+1), month_end-month_start+1])
+    array2 = np.zeros([prec_daily.columns.shape[0]*(end_year-1981+1), month_end-month_start+1])
 
 
     k=0
@@ -81,7 +82,7 @@ def heavy_rain(percent=False,month_start=5, month_end=8):
         temp2 = temp[(temp.index.month>=month_start)&(temp.index.month<=month_end)].dropna().to_frame('Prec')
 
         # every from from 1981-2016         
-        for y in range(1981,2016):         
+        for y in range(1981,end_year+1):         
             bin_means, bin_edges, binnumber = stats.binned_statistic(temp2.loc[str(y)]['Prec'], 
                                                                     temp2.loc[str(y)]['Prec'], 'sum',
                                                                     bins=prec_bin_sigma)
@@ -109,7 +110,7 @@ def heavy_rain(percent=False,month_start=5, month_end=8):
         
     hrain_time_txt = [str(e) for e in range(month_start, month_end+1)] 
         
-    iterables = [prec_daily.columns.tolist(), range(1981,2016)]
+    iterables = [prec_daily.columns.tolist(), range(1981,end_year+1)]
     fips_year_index = pd.MultiIndex.from_product(iterables, names=['FIPS', 'Year'])
 
     df_heavy_rain = pd.DataFrame(array, index=fips_year_index, columns=heavy_rain_txt)
@@ -117,6 +118,13 @@ def heavy_rain(percent=False,month_start=5, month_end=8):
 
     return df_heavy_rain, df_hrain_time
 
+# Save the percentage of heavy rain of different intensities to the total GS rainfall
+def save_hrain_percent():
+    d_hrain, df_hrain_count = heavy_rain(percent=True,month_start=5, month_end=8)
+    d_hrain.to_csv('../data/result/heavy_rain_percent.csv',index=None)
+    print('heavy rain percent saved')
+
+    
 
 # Load growing season climate, May to Aug
 def load_gs_climate(var='ppt', rerun=True):
@@ -140,6 +148,7 @@ def load_gs_climate(var='ppt', rerun=True):
 
 """
 Load PRISM data monthly and then convert the data to crop model format
+Note that this function auto drops all NaN county after the conversion
 """
 def convert_to_gs_monthly(df_mon,var_name):
     # Select growing season
@@ -208,4 +217,6 @@ def get_climate_for_crop_model(year_start=1981,year_end=2016):
 
 if __name__ == '__main__':
     # save climate data for crop model
-    df = get_climate_for_crop_model(year_start=2017,year_end=2018)
+#    df = get_climate_for_crop_model(year_start=2017,year_end=2018)
+   
+    save_hrain_percent()
