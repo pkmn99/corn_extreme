@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
 
-# Plot the correlation between pre-growing season soil moisture and the yield change
+# Plot the correlation between pre-growing season soil moisture/water storage and the yield change
 # Run with the mygeo or env_test to use the new style
 
 """
@@ -44,13 +44,24 @@ def get_corr(df, x_txt, y_txt):
     return pearsonr(df.loc[:,[x_txt,y_txt]].dropna().iloc[:,0],
                                 df.loc[:,[x_txt,y_txt]].dropna().iloc[:,1])
 # Prepare data to plot the figure
-def figure_data():
-    d_test = pd.read_csv('../data/SOILMOISTURE_monthly_1981-2016_county.csv',index_col=0,parse_dates=True)
-    dm = convert_to_gs_monthly(d_test,'SM')
+def figure_data(varname='SM'):
+    if varname=='SM':
+        fn = '../data/SOILMOISTURE_monthly_1981-2016_county.csv'
+    if varname=='WS':
+        fn = '../data/GRCTellus_monthly_2002-2016_county.csv'
+    
+    d_test = pd.read_csv(fn,index_col=0,parse_dates=True)
+
+    if varname=='WS':# Deal with two values in certain months for GRACE
+        dm = convert_to_gs_monthly(d_test.resample('M').mean(),varname)
+    else:
+        dm = convert_to_gs_monthly(d_test,varname)
+
     dm.rename(columns={'year':'Year'},inplace=True)
+
     
     bin_yield = pd.read_csv('../data/result/bin_yield.csv', dtype={'FIPS':str})
-    d = bin_yield.merge(dm,on=['Year','FIPS'])
+    d = bin_yield.merge(dm,on=['Year','FIPS'],how='left')
     return d
 
 # Determine text location based on the sign
@@ -62,49 +73,57 @@ def get_va(v):
         
     return va_txt
 
-def make_plot():
-    d = figure_data()
+def make_plot(varname='SM'):
+    d = figure_data(varname=varname)
     irr_states = ['COLORADO', 'DELAWARE', 'KANSAS', 'MONTANA', 'NEBRASKA', 'TEXAS',
                    'SOUTH DAKOTA', 'NEW MEXICO', 'NORTH DAKOTA', 'OKLAHOMA', 'WYOMING']
+    if varname=='SM':
+        varlist=['SM1','SM2','SM3','SM4','SM5','SM6','SM7','SM8']
+        var_txt = 'soil moisture'
+    if varname=='WS':
+        varlist=['WS1','WS2','WS3','WS4','WS5','WS6','WS7','WS8']
+        var_txt = 'water storage'
 
     # Excessvie rainfall data
-    c=d['Prec_sigma_bin']>12
-
     # Get state where excessive rainfall has negative yield impact
-    sname_negative = d[c].groupby('State').mean()['Yield_ana_to_yield'].sort_values()[0:20].index.values
+    if varname=='WS': # For GRACE data, add year >=2002
+        c=(d['Prec_sigma_bin']>12)&(d['Year']>=2002)
+    else:
+        c=d['Prec_sigma_bin']>12
+    sname_negative = d[c].groupby('State').mean()['Yield_ana_to_yield'].sort_values()
+    sname_negative = sname_negative[sname_negative<0].index.values
+
     c3=d['State'].isin(sname_negative)
     
-    d_corr_rain = d.loc[c&c3,['SM1','SM2','SM3','SM4','SM5','SM6','SM7','SM8',
-                              'Yield_ana_to_yield']].corr()
+    d_corr_rain = d.loc[c&c3,varlist+['Yield_ana_to_yield']].corr()
     
-    p_rain = [get_corr(d.loc[c&c3], s, 'Yield_ana_to_yield')[1] for s in ['SM1','SM2','SM3','SM4']]
-    r_rain = [get_corr(d.loc[c&c3], s, 'Yield_ana_to_yield')[0] for s in ['SM1','SM2','SM3','SM4'] ]
+    p_rain = [get_corr(d.loc[c&c3], s, 'Yield_ana_to_yield')[1] for s in varlist]
+    r_rain = [get_corr(d.loc[c&c3], s, 'Yield_ana_to_yield')[0] for s in varlist]
 
 
     # Extreme drought data
     c=d['Prec_sigma_bin']<4
     c3=~d['State'].isin(irr_states) # Not irrigation states
     
-    d_corr_dry = d.loc[c&c3,['SM1','SM2','SM3','SM4','SM5','SM6','SM7','SM8',
-                             'Yield_ana_to_yield']].corr()
+    d_corr_dry = d.loc[c&c3, varlist+['Yield_ana_to_yield']].corr()
     
-    p_dry = [get_corr(d.loc[c&c3], s, 'Yield_ana_to_yield')[1] for s in ['SM1','SM2','SM3','SM4']]
-    r_dry = [get_corr(d.loc[c&c3], s, 'Yield_ana_to_yield')[0] for s in ['SM1','SM2','SM3','SM4']]
+    p_dry = [get_corr(d.loc[c&c3], s, 'Yield_ana_to_yield')[1] for s in varlist]
+    r_dry = [get_corr(d.loc[c&c3], s, 'Yield_ana_to_yield')[0] for s in varlist]
     
     # Begin plot
     fig, [ax1,ax2] = plt.subplots(1,2,sharey=True,figsize=(8,4))
-    d_corr_dry.loc['Yield_ana_to_yield',slice('SM1','SM4')].plot.bar(ax=ax1)
-    d_corr_rain.loc['Yield_ana_to_yield',slice('SM1','SM4')].plot.bar(ax=ax2)
+    d_corr_dry.loc['Yield_ana_to_yield',slice('%s1'%varname,'%s4'%varname)].plot.bar(ax=ax1)
+    d_corr_rain.loc['Yield_ana_to_yield',slice('%s1'%varname,'%s4'%varname)].plot.bar(ax=ax2)
     
     ax1.set_title('Extreme drought')
     ax2.set_title('Excessive rainfall')
     
    # ax1.set_ylabel('$r$')
-    ax1.set_ylabel('$r$ between yield change and soil moisture')
+    ax1.set_ylabel('$r$ between yield change and %s'%var_txt)
 
     
-    ax1.set_xticklabels(['Janurary','Febuary','March','April'],rotation=0)
-    ax2.set_xticklabels(['Janurary','Febuary','March','April'],rotation=0)
+    ax1.set_xticklabels(['January','February','March','April'],rotation=0)
+    ax2.set_xticklabels(['January','February','March','April'],rotation=0)
     
     for i in range(0,4):
         if p_dry[i] < 0.05:
@@ -117,8 +136,9 @@ def make_plot():
     
     plt.subplots_adjust(top=0.85)
 
-    plt.savefig('../figure/figure_preseason_soilmoisture.pdf')
-    print('Figure saved')
+    plt.savefig('../figure/figure_preseason_%s.pdf'%varname)
+    print('Figure saved for %s'%varname)
 
 if __name__=='__main__':
-    make_plot()
+   # make_plot(varname='SM')
+    make_plot(varname='WS')
