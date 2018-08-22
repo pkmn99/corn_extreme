@@ -125,7 +125,7 @@ def figure_data(level='State'):
     
     c1 = bin_yield['Prec_sigma_bin']>12
     
-    c6 = bin_yield['Year']>2000
+    c6 = bin_yield['Year']>1980
     rain_state_w = (column_weighted(bin_yield[c1], level, 'Yield_ana_to_yield','Area')).\
                     merge(column_weighted(bin_yield, level, var_list, 'Area')).\
                     merge(bin_yield[c6].groupby(level).mean()['Area'].reset_index())
@@ -164,15 +164,16 @@ def make_plot(soilvar='awc'):
     show_name = False
     show_dot = True
    
-    # plot rain, first row 
-    for i in range(len(x_txt)):
-        plot_scatter_sns(rain_state_w, x_txt[i], var_y, color_var[x_txt[i]],
-                         axes.flatten()[i],show_dot=show_dot)
 
-    # plot drought, second row 
-    for i in range(len(x_txt),len(x_txt)*2):
-        plot_scatter_sns(drought_state_w, x_txt[i-len(x_txt)], var_y, color_var[x_txt[i-len(x_txt)]], 
+    # plot drought, 1st row 
+    for i in range(len(x_txt)):
+        plot_scatter_sns(drought_state_w,x_txt[i], var_y, color_var[x_txt[i]], 
         axes.flatten()[i],show_dot=show_dot)
+
+    # plot rain, 2nd row 
+    for i in range(len(x_txt),len(x_txt)*2):
+        plot_scatter_sns(rain_state_w, x_txt[i-len(x_txt)], var_y, color_var[x_txt[i-len(x_txt)]],
+                         axes.flatten()[i],show_dot=show_dot)
     
     # Control limit        
     if level != 'FIPS':
@@ -205,9 +206,9 @@ def make_plot(soilvar='awc'):
         axes.flatten()[i].text(-0.2, 1, panel_txt[i], fontsize=14, transform=axes.flatten()[i].transAxes,
                                fontweight='bold')
     
-    plt.text(0.5,0.95, 'Extreme rainfall', fontsize=16, transform=fig.transFigure, 
+    plt.text(0.5,0.95, 'Extreme drought', fontsize=16, transform=fig.transFigure, 
              ha='center')        
-    plt.text(0.5,0.475, 'Extreme drought', fontsize=16, transform=fig.transFigure, 
+    plt.text(0.5,0.475, 'Excessive rainfall', fontsize=16, transform=fig.transFigure, 
              ha='center')        
     
     plt.subplots_adjust(left=0.075, right=0.95, top=0.925, hspace=0.4, wspace=0.3)
