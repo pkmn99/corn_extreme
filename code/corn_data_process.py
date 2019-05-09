@@ -8,6 +8,7 @@ from load_prism_data import load_prism_county_year_range, calculate_rank, heavy_
 """
 This is the main data processing, to get bin_yield
 """
+# Change to include sept climate to see whether results change 01/09/2018
 
 # Load necessary data and variables 
 
@@ -66,6 +67,12 @@ def bin_yield_climate_county(yield_data, fips, add_loss_ratio=False):
            prec_monthly[fips][prec_monthly[fips].index[6:-1:12]].to_period('A').rename('Prec_7'),
            prec_monthly[fips][prec_monthly[fips].index[7:-1:12]].to_period('A').rename('Prec_8')],
            axis=1).reset_index()
+
+   # P = pd.concat([prec_monthly[fips][prec_monthly[fips].index[4:-1:12]].to_period('A').rename('Prec_5'),
+   #        prec_monthly[fips][prec_monthly[fips].index[5:-1:12]].to_period('A').rename('Prec_6'),
+   #        prec_monthly[fips][prec_monthly[fips].index[6:-1:12]].to_period('A').rename('Prec_7')],
+   #        axis=1).reset_index()
+
     P['Year'] = P['Year'].apply(lambda x: x.year)
     P['Prec'] = P.iloc[:,1::].sum(axis=1)
     P['Prec_percentile']=(stats.rankdata(P['Prec'], method='average')*2-1)/(P['Prec'].shape[0]*2)
@@ -76,6 +83,12 @@ def bin_yield_climate_county(yield_data, fips, add_loss_ratio=False):
            tmax_monthly[fips][tmax_monthly[fips].index[6:-1:12]].to_period('A').rename('Tmax_7'),
            tmax_monthly[fips][tmax_monthly[fips].index[7:-1:12]].to_period('A').rename('Tmax_8')],
            axis=1).reset_index()
+
+   # T = pd.concat([tmax_monthly[fips][tmax_monthly[fips].index[4:-1:12]].to_period('A').rename('Tmax_5'),
+   #        tmax_monthly[fips][tmax_monthly[fips].index[5:-1:12]].to_period('A').rename('Tmax_6'),
+   #        tmax_monthly[fips][tmax_monthly[fips].index[6:-1:12]].to_period('A').rename('Tmax_7')],
+   #        axis=1).reset_index()
+
     T['Year'] = T['Year'].apply(lambda x: x.year)
     T['Tmax'] = T.iloc[:,1::].mean(axis=1)
     T['Tmax_percentile'] = (stats.rankdata(T['Tmax'], method='average')*2-1)/(T['Tmax'].shape[0]*2)
@@ -152,7 +165,7 @@ bin_yield['Yield_ana_to_yield_normal_diff'] = bin_yield['Yield_ana_to_yield'] - 
 if fitting_type == 'quadratic':
     bin_yield.to_csv('../data/result/bin_yield_%s.csv'%fitting_type)
 else:
-    bin_yield.to_csv('../data/result/bin_yield.csv')
+    bin_yield.to_csv('../data/result/bin_yield_mon567.csv')
 
 
 
@@ -180,6 +193,6 @@ bin_yield_rma['Production_ana'] = bin_yield_rma['Area'] * bin_yield_rma['Yield_a
 if fitting_type == 'quadratic':
     bin_yield_rma.to_csv('../data/result/bin_yield_rma_%s.csv'%fitting_type)
 else:
-    bin_yield_rma.to_csv('../data/result/bin_yield_rma.csv')
+    bin_yield_rma.to_csv('../data/result/bin_yield_rma_mon567.csv')
 
 print('Process done, bin_yield, and bin_yield_rma saved')
