@@ -145,7 +145,7 @@ def plot_map(df, fig, ax, type='Drought'):
     fips_list = df['FIPS'].tolist()
 
     # Plot county value    
-    for record, county in zip(county_shapes.records(), county_shapes.geometries()):
+    for record, county in list(zip(county_shapes.records(), county_shapes.geometries())):
         fips = record.attributes['FIPS']
         if fips in fips_list:
             facecolor = df[df['FIPS'] == fips]['color']
@@ -270,7 +270,7 @@ def make_plot():
     new_pos2 = [0.32717391304347831*0.55, 0.25785714285714278*0.9, 0.3706521739130435*1.5, 0.24357142857142866*1.2]
     new_ax2 = plt.axes(new_pos2, projection=ccrs.LambertConformal())
     plot_map(rain_value, fig, new_ax2, type='Rain')
-    new_ax2.text(0.55,0.925,'Extreme rainfall', transform=new_ax2.transAxes,fontsize=14, fontweight='bold',
+    new_ax2.text(0.55,0.925,'Excessive rainfall', transform=new_ax2.transAxes,fontsize=14, fontweight='bold',
                 color=colors[-1])
     new_ax2.patch.set_visible(False)
     new_ax2.text(0.0, 1, 'b', fontsize=16, transform=new_ax2.transAxes, fontweight='bold')
@@ -279,7 +279,7 @@ def make_plot():
     plt.subplots_adjust(top=0.95, bottom=0.1, left=0.05, right=0.95, hspace=0.1)
 
     
-    plt.savefig('../figure/figure2_test.pdf')
+    plt.savefig('../figure/figure2_new.pdf')
 
 
 if __name__ == "__main__":
@@ -293,7 +293,7 @@ if __name__ == "__main__":
     
     bin_yield = pd.read_csv('../data/result/bin_yield.csv', dtype={'FIPS':str})
     bin_yield['Yield_ana_to_yield_area'] = bin_yield['Yield_ana_to_yield'] * bin_yield['Area']
-    bin_yield['Yield_ana_to_yield,weight'] = zip(bin_yield['Yield_ana_to_yield']*100, bin_yield['Area'])
+    bin_yield['Yield_ana_to_yield,weight'] = list(zip(bin_yield['Yield_ana_to_yield']*100, bin_yield['Area']))
     
     # Drought impact map
     c1 = bin_yield['Prec_sigma_bin']<4

@@ -14,23 +14,23 @@ corn_area = corn_area.dropna()
 
 # Combine
 corn_pop_area = corn_pop.merge(corn_area.groupby(['Year','State']).mean().reset_index(), on=['Year','State'])
-corn_pop_area['Area'] = corn_pop_area['Area']/1000
+corn_pop_area['Area'] = corn_pop_area['Area']/1000*0.404686 # convert to ha
+corn_pop_area.loc[:,'Pop'] = corn_pop_area.loc[:,'Pop']/0.404686 # convert to ha
 
 fig, [ax1,ax2] = plt.subplots(1,2,figsize=(8,4))
 
 c3 = corn_pop_area['Year'] <= 2000
 plot_scatter_sns(corn_pop_area[c3], 'Area', 'Pop', 'k', ax1, show_dot=True)
-ax1.set_ylim(20000,35000)
-ax1.set_ylabel('Plant population (plants/acre)')
-ax1.set_xlabel('Harvest area (10$^3$acres)')
+ax1.set_ylim(20000/0.404686,35000/0.404686)
+ax1.set_ylabel('Plant population (plants/ha)')
+ax1.set_xlabel('Harvest area (10$^3$ha)')
 ax1.set_title('1981-2000')
 ax1.text(-0.15, 1, 'a', fontsize=16, transform=ax1.transAxes, fontweight='bold')
 
 c4 = corn_pop_area['Year'] > 2000
 plot_scatter_sns(corn_pop_area[c4], 'Area', 'Pop', 'k', ax2, show_dot=True)
-ax2.set_ylim(20000,35000)
-#ax2.set_ylabel('Plant population (plants/acre)')
-ax2.set_xlabel('Harvest area (10$^3$acres)')
+ax2.set_ylim(20000/0.404686,35000/0.404686)
+ax2.set_xlabel('Harvest area (10$^3$ha)')
 ax2.set_title('2001-2016')
 ax2.text(-0.15, 1, 'b', fontsize=16, transform=ax2.transAxes, fontweight='bold')
 

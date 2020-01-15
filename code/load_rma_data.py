@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from load_nass_county_data import load_nass_county_data
 
 # Delect extra space in a string
 def del_space(s):
@@ -31,7 +30,8 @@ def load_rma_loss(year):
         
     d = pd.read_csv(filename, sep='|', header=None, names=col_names, index_col=False,
                     dtype={'Locations State Code': str, 'Location County Code': str,
-                           'Commodity Code': str, 'Damage Cause Code': str})
+                           'Commodity Code': str, 'Damage Cause Code': str}) 
+         #                  'Month of Loss': np.int}) # doesn't work due to 2003 data contains ' '
     # delete extra space
     d['Commodity Name'] = d['Commodity Name'].apply(del_space)
     d['Damage Cause Description'] = d['Damage Cause Description'].apply(del_space)
@@ -154,7 +154,8 @@ def load_rma_loss_ratio_cause(crop_name='corn',rerun=True):
         loss_ratio_cause = result.set_index(['FIPS', 'Commodity Year', 'Damage Cause Description'])
         loss_ratio_cause.to_csv('../data/result/RMA_loss_ratio_cause.csv')
     else:
-        loss_ratio_cause = pd.read_csv('../data/result/RMA_loss_ratio_cause.csv')
+        loss_ratio_cause = pd.read_csv('../data/result/RMA_loss_ratio_cause.csv', dtype={'FIPS':str})
+#        loss_ratio_cause = loss_ratio_cause.set_index(['FIPS','Commodity Year','Damage Cause Description'])
     return loss_ratio_cause
 
 
@@ -164,6 +165,7 @@ Only for corn
 df = get_rma_acer_coverage(crop_name='corn', level='county')
 """
 def get_rma_acres_coverage(crop_name='corn', level='county'):
+    from load_nass_county_data import load_nass_county_data
     frame = [load_rma_sob(i) for i in range(1989,2016)]
     data = pd.concat(frame)
     if crop_name != 'all':
@@ -213,7 +215,7 @@ def load_rma_loss_ratio_cause_month(rerun=False):
             to_csv('../data/result/RMA_loss_ratio_cause_month.csv')
         print('Rerun function, file RMA_loss_ratio_cause_month.csv saved')
     else:    
-        loss_ratio_cause_month = pd.read_csv('../data/result/RMA_loss_ratio_cause_month.csv')
+        loss_ratio_cause_month = pd.read_csv('../data/result/RMA_loss_ratio_cause_month.csv',dtype={'FIPS':str})
         print('Do not rerun function, load data from file RMA_loss_ratio_cause_month.csv')
     
     return loss_ratio_cause_month 

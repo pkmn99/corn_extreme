@@ -10,7 +10,7 @@ from plot_figure3 import column_weighted
 def append_value(ds):
     return ds.append(pd.Series(ds.loc[15],index=[16]))
 
-# Calculate bin model values
+# Calculate bin model values; or wfdei.gpcc
 def fig_data(climate_data='agmerra'):
     if climate_data=='agmerra':
        data_tag = ''

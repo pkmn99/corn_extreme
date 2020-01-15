@@ -118,12 +118,18 @@ def heavy_rain(percent=False,month_start=5, month_end=8):
 
     return df_heavy_rain, df_hrain_time
 
-# Save the percentage of heavy rain of different intensities to the total GS rainfall
-def save_hrain_percent():
-    d_hrain, df_hrain_count = heavy_rain(percent=True,month_start=5, month_end=8)
-    d_hrain.to_csv('../data/result/heavy_rain_percent.csv',index=None)
-    print('heavy rain percent saved')
-
+# Save the percentage and amount of heavy rain of different intensities to the total GS rainfall
+def save_hrain_percent(percent=True):
+    d_hrain, d_hrain_count = heavy_rain(percent=percent,month_start=5, month_end=8)
+    if percent:
+        d_hrain.to_csv('../data/result/heavy_rain_percent.csv')
+        print('heavy rain percent saved')
+    else:
+        d_hrain.to_csv('../data/result/heavy_rain_amount.csv')
+        print('heavy rain amount saved')
+    # this is the 3.5 SD heavy rain count
+    d_hrain_count.to_csv('../data/result/heavy_rain_count.csv')
+    print('heavy rain count saved')
     
 
 # Load growing season climate, May to Aug
@@ -219,4 +225,4 @@ if __name__ == '__main__':
     # save climate data for crop model
 #    df = get_climate_for_crop_model(year_start=2017,year_end=2018)
    
-    save_hrain_percent()
+    save_hrain_percent(percent=False)

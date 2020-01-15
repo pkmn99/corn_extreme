@@ -22,7 +22,9 @@ tile_st['State']=tile_st['State'].str.upper()
 
 tile_st.loc[:,'tileDra']=tile_st.loc[:,'tileDra'] * 100
 
-data_m = drought_state_w.merge(tile_st,on='State')
+data_m = rain_state_w.merge(tile_st,on='State')
+
+#print(data_m)
 
 #color_var={'Prec_mean_weighted':colors[-1], 'Tmax_mean_weighted':colors[0], 
 #           'Area':'#525252', soilvar+'_weighted':'#995D12'}
@@ -49,10 +51,13 @@ ax2.set_ylabel('Tile drainage percentage (%)', fontsize=12)
 ax1.set_xlabel('Tile drainage percentage (%)', fontsize=12)
 ax2.set_xlabel(soilvar_label['ksat'], fontsize=12)
 
+ax1.text(-0.2, 1, 'a', fontsize=16, transform=ax1.transAxes, fontweight='bold')
+ax2.text(-0.2, 1, 'b', fontsize=16, transform=ax2.transAxes, fontweight='bold')
+
+
 #ax1.set_ylim(-50,30)
 #ax2.set_ylim(-50,30)
 
 plt.subplots_adjust(wspace=0.3, bottom=0.15)
 
-
-plt.savefig('../figure/figure_test_%s.pdf'%level)
+plt.savefig('../figure/figure_tile_drainage_%s.pdf'%level)

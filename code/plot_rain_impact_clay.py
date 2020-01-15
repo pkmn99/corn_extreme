@@ -7,9 +7,8 @@ from load_prism_data import load_gs_climate
 from plot_figure1 import define_colors
 from plot_figure3 import plot_scatter_sns, figure_data
 
-
 colors = define_colors()
-level = 'FIPS'
+level = 'State' # FIPS
 rain_state_w, drought_state_w = figure_data(level=level)
 
 #color_var={'Prec_mean_weighted':colors[-1], 'Tmax_mean_weighted':colors[0], 
@@ -36,6 +35,9 @@ ax2.set_title('Extreme drought', fontsize=14)
 
 ax1.set_xlabel('Soil clay percentage (%)', fontsize=12)
 ax2.set_xlabel('Soil clay percentage (%)', fontsize=12)
+
+ax1.text(-0.15, 1, 'a', fontsize=16, transform=ax1.transAxes, fontweight='bold')
+ax2.text(-0.15, 1, 'b', fontsize=16, transform=ax2.transAxes, fontweight='bold')
 
 #ax1.set_ylim(-50,30)
 #ax2.set_ylim(-50,30)

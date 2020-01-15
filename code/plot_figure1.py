@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 #import seaborn.apionly as sns
 import seaborn as sns
-import scikits.bootstrap as bootstrap  
+#import scikits.bootstrap as bootstrap  
 
 
 def weighted_mean(x, **kws):
@@ -24,7 +24,7 @@ def fig_data():
     bin_yield = pd.read_csv('../data/result/bin_yield.csv',dtype={'FIPS':str})
     bin_yield['Yield_ana_to_yield'] = bin_yield['Yield_ana_to_yield'] * 100 # convert to %
     bin_yield['Yield_ana_to_yield_area'] = bin_yield['Yield_ana_to_yield'] * bin_yield['Area']
-    bin_yield['Yield_ana_to_yield,weight'] = zip(bin_yield['Yield_ana_to_yield'], bin_yield['Area'])
+    bin_yield['Yield_ana_to_yield,weight'] = list(zip(bin_yield['Yield_ana_to_yield'], bin_yield['Area']))
 
 
     # rma loss 
@@ -78,7 +78,7 @@ def fig_data():
     b_rain['Event'] = 'Extreme rain'
     b_drought_rain = pd.concat([b_drought[['Event','Type','Yield_ana_to_yield','Area']], 
                                 b_rain[['Event','Type', 'Yield_ana_to_yield','Area']]])
-    b_drought_rain['Yield_ana_to_yield,weight'] = zip(b_drought_rain['Yield_ana_to_yield'], b_drought_rain['Area'])
+    b_drought_rain['Yield_ana_to_yield,weight'] = list(zip(b_drought_rain['Yield_ana_to_yield'], b_drought_rain['Area']))
  
 #    drought_rain_table = pd.DataFrame(np.zeros([6,4]), index=['Dry','Dry+hot','Dry-hot','Rain','Rain+cold',
 #                                      'Rain-cold'],columns=['mean','ci_low','ci_high','ci'])
@@ -122,7 +122,7 @@ def fig_data():
              loss_ratio_cause_month_bin[c_gs_month&c2&c3][['Damage Cause Description', 
                                                   'Month of Loss Abbreviation','Loss ratio by cause and month','Area']]])
     
-    loss_temp['loss_ratio,weight'] = zip(loss_temp['Loss ratio by cause and month'], loss_temp['Area'])
+    loss_temp['loss_ratio,weight'] = list(zip(loss_temp['Loss ratio by cause and month'], loss_temp['Area']))
 
     return bin_yield, loss_ratio_Prec, b_drought_rain, loss_temp
 
@@ -350,9 +350,6 @@ def make_plot():
     axes[1,1].plot([0.5, 0.5],[1.7, 2],'--', color='grey', lw=0.75)
     axes[1,1].plot([1.5, 1.5],[1.7, 2],'--', color='grey', lw=0.75)
     axes[1,1].plot([2.5, 2.5],[1.7, 2],'--', color='grey', lw=0.75)
-
-#    new_labels = ['Drought', 'Excess rain']
-#    for t, l in zip(f2.legend_.texts, new_labels): t.set_text(l)
 
     axes[1,1].text(-0.15, 1, 'd', fontsize=16, transform=axes[1,1].transAxes, fontweight='bold')
 #    axes[1,1].set_xlim(-0.5,13.5)

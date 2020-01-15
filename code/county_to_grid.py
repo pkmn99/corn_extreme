@@ -6,6 +6,7 @@ from get_county_latlon import get_county_latlon
 
 
 # functions related to aggregating county yield/area to 0.5 deg grid
+# Run with geo env
 
 """
 Get gridded corn harvest area and weighted yield from 1981 to 2010

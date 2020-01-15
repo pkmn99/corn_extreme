@@ -5,6 +5,7 @@ import statsmodels.api as sm
 import seaborn as sns
 from load_prism_data import load_gs_climate
 from plot_figure1 import define_colors
+from functools import reduce
 
 """
 Weighted average, see http://pbpython.com/weighted-average.html
@@ -99,7 +100,7 @@ def figure_data(level='State'):
 
     bin_yield = pd.read_csv('../data/result/bin_yield.csv', dtype={'FIPS':str})
     
-    soil = pd.read_csv('/home/yanli/Project/data/GEE/US_soil_corn_county/US_county_corn_soil_property.csv',
+    soil = pd.read_csv('../../data/GEE/US_soil_corn_county/US_county_corn_soil_property.csv',
                        dtype={'FIPS':str})
     
     bin_yield = bin_yield.merge(soil, on='FIPS').merge(tmax_prec_mean, on='FIPS')
@@ -140,8 +141,8 @@ def figure_data(level='State'):
     drought_state_w['Yield_ana_to_yield_weighted'] = drought_state_w['Yield_ana_to_yield_weighted']*100     
     
    # if level!='FIPS':
-    rain_state_w['Area'] = rain_state_w['Area']/1000     
-    drought_state_w['Area'] = drought_state_w['Area']/1000     
+    rain_state_w['Area'] = rain_state_w['Area']/1000 * 0.404686 # convert acre to ha*1000
+    drought_state_w['Area'] = drought_state_w['Area']/1000 * 0.404686
 
     return rain_state_w, drought_state_w
 
@@ -164,6 +165,35 @@ def make_plot(soilvar='awc'):
     show_name = False
     show_dot = True
    
+    # Control limit        
+    if level != 'FIPS':
+        axes.flatten()[0].set_xlim(0, 700) # Prec
+        axes.flatten()[4].set_xlim(0, 700)
+
+        axes.flatten()[1].set_xlim(23, 34) # Temp
+        axes.flatten()[5].set_xlim(23, 34)
+
+        axes.flatten()[2].set_xlim(0, 25) # Ksat 
+        axes.flatten()[6].set_xlim(0, 25)
+        
+        axes.flatten()[3].set_xlim(-10*0.404686, 140*0.404686) # Area
+        axes.flatten()[7].set_xlim(-10*0.404686, 140*0.404686)
+
+        [ax.set_ylim(-50,30) for ax in axes.flatten()]
+    else:
+        axes.flatten()[0].set_xlim(0, 700) # Prec
+        axes.flatten()[4].set_xlim(0, 700)
+
+        axes.flatten()[1].set_xlim(20, 34) # Temp
+        axes.flatten()[5].set_xlim(20, 40)
+
+        axes.flatten()[2].set_xlim(0, 25) # Ksat 
+        axes.flatten()[6].set_xlim(0, 25)
+        
+        axes.flatten()[3].set_xlim(-10*0.404686, 400*0.404686) # Area
+        axes.flatten()[7].set_xlim(-10*0.404686, 400*0.404686)
+
+        [ax.set_ylim(-100,100) for ax in axes.flatten()]
 
     # plot drought, 1st row 
     for i in range(len(x_txt)):
@@ -175,19 +205,6 @@ def make_plot(soilvar='awc'):
         plot_scatter_sns(rain_state_w, x_txt[i-len(x_txt)], var_y, color_var[x_txt[i-len(x_txt)]],
                          axes.flatten()[i],show_dot=show_dot)
     
-    # Control limit        
-    if level != 'FIPS':
-        axes.flatten()[0].set_xlim(0, 700) # Prec
-        axes.flatten()[4].set_xlim(0, 700)
-        
-        axes.flatten()[3].set_xlim(-10, 140) # Area
-        axes.flatten()[7].set_xlim(-10, 140)
-
-        [ax.set_ylim(-50,30) for ax in axes.flatten()]
-#        [axes.flatten()[i].set_ylim(-50,30) for i in range(len(x_txt))]
-    else:
-#        [axes.flatten()[i].set_ylim(-100,100) for i in range(len(x_txt))]
-        [ax.set_ylim(-100,100) for ax in axes.flatten()]
     
     axes.flatten()[0].set_ylabel('Yield change (%)', fontsize=12)
     axes.flatten()[4].set_ylabel('Yield change (%)', fontsize=12)
@@ -195,7 +212,7 @@ def make_plot(soilvar='awc'):
     
     # Add xlabel
     xlabel_txt = [u'Precipitation (mm)', 'Maximum temperature (${^\circ}$C)',
-                  soilvar_label[soilvar], 'Harvest area (10$^3$acres)']
+                  soilvar_label[soilvar], 'Harvest area (10$^3$ha)']
     for i in range(len(x_txt)):
         axes.flatten()[i].set_xlabel(xlabel_txt[i], fontsize=12)
         axes.flatten()[i+4].set_xlabel(xlabel_txt[i], fontsize=12)
@@ -213,7 +230,7 @@ def make_plot(soilvar='awc'):
     
     plt.subplots_adjust(left=0.075, right=0.95, top=0.925, hspace=0.4, wspace=0.3)
     
-    plt.savefig('../figure/figure3_%s_%s.pdf'%(level,soilvar))
+    plt.savefig('../figure/figure3_%s_%s_test.pdf'%(level,soilvar))
 
     print('figure file %s_%s level saved'%(level,soilvar))
 
